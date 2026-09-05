@@ -89,3 +89,6 @@
 [submodule "vendor/lpeg"]
 	path = vendor/lpeg
 	url = https://github.com/roberto-ieru/LPeg.git
+[submodule "vendor/angelscript"]
+	path = vendor/angelscript
+	url = https://github.com/anjo76/angelscript
