@@ -22,6 +22,7 @@ build\bin\prj2cart demos\squirreldemo.nut build\squirreldemo.tic
 build\bin\prj2cart demos\tetris.lua build\tetris.tic
 build\bin\prj2cart demos\wrendemo.wren build\wrendemo.tic
 build\bin\prj2cart demos\yuedemo.yue build\yuedemo.tic
+cmake-build-debug-tic80\bin\prj2cart demos\angelscriptdemo.as build\angelscriptdemo.tic
 
 build\bin\wasmp2cart demos\wasm\wasmdemo.wasmp build\wasmdemo.tic --binary demos\wasm\wasmdemo.wasm
 build\bin\wasmp2cart demos\bunny\wasmmark\wasmmark.wasmp build\wasmmark.tic --binary demos\bunny\wasmmark\wasmmark.wasm
@@ -73,5 +74,6 @@ build\bin\bin2txt build\wrenmark.tic build\assets\wrenmark.tic.dat -z
 build\bin\bin2txt build\wasmdemo.tic build\assets\wasmdemo.tic.dat -z
 build\bin\bin2txt build\yuedemo.tic build\assets\yuedemo.tic.dat -z
 build\bin\bin2txt build\yuemark.tic build\assets\yuemark.tic.dat -z
+cmake-build-debug-tic80\bin\bin2txt build\angelscriptdemo.tic build\assets\angelscriptdemo.tic.dat -z
 
 build\bin\bin2txt build\cart.png build\assets\cart.png.dat
