@@ -10,6 +10,7 @@ set(TIC_RT_WREN "unknown")
 set(TIC_RT_WASM "unknown")
 set(TIC_RT_JANET "unknown")
 set(TIC_RT_PYTHON "unknown")
+set(TIC_RT_ANGELSCRIPT "unknown")
 
 if(EXISTS "${CMAKE_SOURCE_DIR}/vendor/lua/lua.h")
     file(STRINGS "${CMAKE_SOURCE_DIR}/vendor/lua/lua.h" LUA_VERSION_MAJOR_LINE REGEX "^#define LUA_VERSION_MAJOR[ \t]+\"[^\"]+\"")

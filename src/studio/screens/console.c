@@ -3661,6 +3661,7 @@ static const struct LangRuntimeVersion
     {"wasm",     TIC_RUNTIME_VERSION_WASM},
     {"janet",    TIC_RUNTIME_VERSION_JANET},
     {"python",   TIC_RUNTIME_VERSION_PYTHON},
+    {"angelscript",   TIC_RUNTIME_VERSION_ANGELSCRIPT},
     {NULL, NULL},
 };
 
