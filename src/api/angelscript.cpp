@@ -21,6 +21,7 @@
 #include "weakref.h"
 
 #include <assert.h>
+#include <inttypes.h>
 
 #include "scriptmathcomplex.h"
 
@@ -76,6 +77,64 @@ static void asMessageCallback(const asSMessageInfo *msg, void *param)
     char buffer[16384];
     sprintf(buffer, "%s (%d, %d) : %s : %s", msg->section, msg->row, msg->col, type, msg->message);
     core->data->error(core->data->data, buffer);
+}
+
+static string asToString(asIScriptGeneric* gen, asUINT arg)
+{
+    const int typeId = gen->GetArgTypeId(arg);
+    void *value = gen->GetArgAddress(arg);
+    const int baseTypeId = typeId & asTYPEID_MASK_SEQNBR;
+
+    switch (baseTypeId)
+    {
+    case asTYPEID_BOOL:
+        return *(bool*)value ? "true" : "false";
+    case asTYPEID_INT8:
+        return std::to_string(*(s8*)value);
+    case asTYPEID_INT16:
+        return std::to_string(*(s16*)value);
+    case asTYPEID_INT32:
+        return std::to_string(*(s32*)value);
+    case asTYPEID_UINT8:
+        return std::to_string(*(u8*)value);
+    case asTYPEID_UINT16:
+        return std::to_string(*(u16*)value);
+    case asTYPEID_UINT32:
+        return std::to_string(*(u32*)value);
+    case asTYPEID_INT64:
+        return std::to_string(*(s64*)value);
+    case asTYPEID_UINT64:
+        return std::to_string(*(u64*)value);
+    case asTYPEID_FLOAT:
+        {
+            char buf[64];
+            snprintf(buf, sizeof(buf), "%g", *(float*)value);
+            return buf;
+        }
+    case asTYPEID_DOUBLE:
+        {
+            char buf[64];
+            snprintf(buf, sizeof(buf), "%g", *(double*)value);
+            return buf;
+        }
+    default:
+        break;
+    }
+
+    asITypeInfo *type = gen->GetEngine()->GetTypeInfoById(typeId);
+
+    if (!type) return "<unknown>";
+
+    const char *typeName = type->GetName();
+
+    if (strcmp(typeName, "string") == 0)
+        return *(string*)value;
+
+    {
+        char buf[128];
+        snprintf(buf, sizeof(buf), "%s 0x%" PRIxPTR, typeName, (uintptr_t)value);
+        return buf;
+    }
 }
 
 // static void as_cls(uint8 color)
@@ -139,14 +198,14 @@ static void as_spr(asIScriptGeneric* gen)
     core->api.spr(mem, id, x, y, w, h, colors, colors_count, scale, tic_flip(flip), tic_rotate(rotate));
 }
 
-// void print(const string& in text, int x, int y, uint8 color, bool fixed, int scale, bool alt)
+// void print(const ?&in text, int x, int y, uint8 color, bool fixed, int scale, bool alt)
 static void as_print(asIScriptGeneric* gen)
 {
     asIScriptContext* ctx = asGetActiveContext();
     tic_core* core = static_cast<tic_core*>(ctx->GetUserData());
     tic_mem* mem = (tic_mem*)core;
 
-    const string* text = static_cast<const string*>(gen->GetArgObject(0));
+    string text = asToString(gen, 0);
     const s32 x = (s32)gen->GetArgDWord(1);
     const s32 y = (s32)gen->GetArgDWord(2);
     const u8 color = gen->GetArgByte(3);
@@ -154,7 +213,7 @@ static void as_print(asIScriptGeneric* gen)
     const s32 scale = (s32)gen->GetArgDWord(5);
     const bool alt = *(bool*)gen->GetAddressOfArg(6);
 
-    core->api.print(mem, text->c_str(), x, y, color, fixed, scale, alt);
+    core->api.print(mem, text.c_str(), x, y, color, fixed, scale, alt);
 }
 
 static void initAPI(tic_core* core)
@@ -169,7 +228,7 @@ static void initAPI(tic_core* core)
     REGISTER_TIC(vm, as_btn, "bool btn(int)");
     REGISTER_TIC(vm, as_spr, "void spr(int id, int x, int y, int colorkey=-1, int scale=1, uint8 flip=0, uint8 rotate=0, int w=1, int h=1)");
     REGISTER_TIC(vm, as_spr, "void spr(int id, int x, int y, const array<int>@ colorkey, int scale=1, uint8 flip=0, uint8 rotate=0, int w=1, int h=1)");
-    REGISTER_TIC(vm, as_print, "void print(const string& in, int, int, uint8, bool, int, bool)");
+    REGISTER_TIC(vm, as_print, "void print(const ?&in value, int x=0, int y=0, uint8 color=15, bool fixed=false, int scale=1, bool smallfont=false)");
 }
 
 static void closeAngelScript(tic_mem* tic)
