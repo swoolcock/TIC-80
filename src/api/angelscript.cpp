@@ -47,8 +47,11 @@ typedef struct
     asIScriptEngine* engine;
     asIScriptContext* context;
     asIScriptModule* module;
-    asIScriptFunction* tickFunction;
+    asIScriptFunction* borderFunction;
     asIScriptFunction* bootFunction;
+    asIScriptFunction* menuFunction;
+    asIScriptFunction* scanlineFunction;
+    asIScriptFunction* tickFunction;
 } ANGELSCRIPTVM;
 
 extern "C" {
@@ -161,44 +164,85 @@ static string asToString(asIScriptGeneric* gen, asUINT arg)
 static void as_peek(asIScriptGeneric* gen)
 {
     GET_TIC_CORE(ctx, core, mem);
+
+    const s32 address = (s32)gen->GetArgDWord(0);
+    const s32 bits = (s32)gen->GetArgDWord(1);
+
+    u8 rv = core->api.peek(mem, address, bits);
+    gen->SetReturnByte(rv);
 }
 
 static void as_poke(asIScriptGeneric* gen)
 {
     GET_TIC_CORE(ctx, core, mem);
+
+    const s32 address = (s32)gen->GetArgDWord(0);
+    const u8 value = gen->GetArgByte(1);
+    const s32 bits = (s32)gen->GetArgDWord(2);
+
+    core->api.poke(mem, address, value, bits);
 }
 
 static void as_peek1(asIScriptGeneric* gen)
 {
     GET_TIC_CORE(ctx, core, mem);
+
+    const s32 address = (s32)gen->GetArgDWord(0);
+
+    u8 rv = core->api.peek1(mem, address);
+    gen->SetReturnByte(rv);
 }
 
 static void as_poke1(asIScriptGeneric* gen)
 {
     GET_TIC_CORE(ctx, core, mem);
+
+    const s32 address = (s32)gen->GetArgDWord(0);
+    const u8 value = gen->GetArgByte(1);
+
+    core->api.poke1(mem, address, value);
 }
 
 static void as_peek2(asIScriptGeneric* gen)
 {
     GET_TIC_CORE(ctx, core, mem);
+
+    const s32 address = (s32)gen->GetArgDWord(0);
+
+    u8 rv = core->api.peek2(mem, address);
+    gen->SetReturnByte(rv);
 }
 
 static void as_poke2(asIScriptGeneric* gen)
 {
     GET_TIC_CORE(ctx, core, mem);
+
+    const s32 address = (s32)gen->GetArgDWord(0);
+    const u8 value = gen->GetArgByte(1);
+
+    core->api.poke2(mem, address, value);
 }
 
 static void as_peek4(asIScriptGeneric* gen)
 {
     GET_TIC_CORE(ctx, core, mem);
+
+    const s32 address = (s32)gen->GetArgDWord(0);
+
+    u8 rv = core->api.peek4(mem, address);
+    gen->SetReturnByte(rv);
 }
 
 static void as_poke4(asIScriptGeneric* gen)
 {
     GET_TIC_CORE(ctx, core, mem);
+
+    const s32 address = (s32)gen->GetArgDWord(0);
+    const u8 value = gen->GetArgByte(1);
+
+    core->api.poke4(mem, address, value);
 }
 
-// static void as_cls(uint8 color)
 static void as_cls(asIScriptGeneric* gen)
 {
     GET_TIC_CORE(ctx, core, mem);
@@ -210,41 +254,109 @@ static void as_cls(asIScriptGeneric* gen)
 static void as_pix(asIScriptGeneric* gen)
 {
     GET_TIC_CORE(ctx, core, mem);
+
+    const s32 x = (s32)gen->GetArgDWord(0);
+    const s32 y = (s32)gen->GetArgDWord(1);
+
+    if (gen->GetArgCount() == 2)
+    {
+        u8 rv = core->api.pix(mem, x, y, 0, true);
+        gen->SetReturnByte(rv);
+    }
+    else
+    {
+        const u8 color = gen->GetArgByte(2);
+        core->api.pix(mem, x, y, color, false);
+    }
 }
 
 static void as_line(asIScriptGeneric* gen)
 {
     GET_TIC_CORE(ctx, core, mem);
+
+    const float x0 = gen->GetArgFloat(0);
+    const float y0 = gen->GetArgFloat(1);
+    const float x1 = gen->GetArgFloat(2);
+    const float y1 = gen->GetArgFloat(3);
+    const u8 color = gen->GetArgByte(4);
+
+    core->api.line(mem, x0, y0, x1, y1, color);
 }
 
 static void as_rect(asIScriptGeneric* gen)
 {
     GET_TIC_CORE(ctx, core, mem);
+
+    const s32 x = (s32)gen->GetArgDWord(0);
+    const s32 y = (s32)gen->GetArgDWord(1);
+    const s32 w = (s32)gen->GetArgDWord(2);
+    const s32 h = (s32)gen->GetArgDWord(3);
+    const u8 color = gen->GetArgByte(4);
+
+    core->api.rect(mem, x, y, w, h, color);
 }
 
 static void as_rectb(asIScriptGeneric* gen)
 {
     GET_TIC_CORE(ctx, core, mem);
+
+    const s32 x = (s32)gen->GetArgDWord(0);
+    const s32 y = (s32)gen->GetArgDWord(1);
+    const s32 w = (s32)gen->GetArgDWord(2);
+    const s32 h = (s32)gen->GetArgDWord(3);
+    const u8 color = gen->GetArgByte(4);
+
+    core->api.rectb(mem, x, y, w, h, color);
 }
 
 static void as_circ(asIScriptGeneric* gen)
 {
     GET_TIC_CORE(ctx, core, mem);
+
+    const s32 x = (s32)gen->GetArgDWord(0);
+    const s32 y = (s32)gen->GetArgDWord(1);
+    const s32 radius = (s32)gen->GetArgDWord(2);
+    const u8 color = gen->GetArgByte(3);
+
+    core->api.circ(mem, x, y, radius, color);
 }
 
 static void as_circb(asIScriptGeneric* gen)
 {
     GET_TIC_CORE(ctx, core, mem);
+
+    const s32 x = (s32)gen->GetArgDWord(0);
+    const s32 y = (s32)gen->GetArgDWord(1);
+    const s32 radius = (s32)gen->GetArgDWord(2);
+    const u8 color = gen->GetArgByte(3);
+
+    core->api.circb(mem, x, y, radius, color);
 }
 
 static void as_elli(asIScriptGeneric* gen)
 {
     GET_TIC_CORE(ctx, core, mem);
+
+    const s32 x = (s32)gen->GetArgDWord(0);
+    const s32 y = (s32)gen->GetArgDWord(1);
+    const s32 a = (s32)gen->GetArgDWord(2);
+    const s32 b = (s32)gen->GetArgDWord(3);
+    const u8 color = gen->GetArgByte(4);
+
+    core->api.elli(mem, x, y, a, b, color);
 }
 
 static void as_ellib(asIScriptGeneric* gen)
 {
     GET_TIC_CORE(ctx, core, mem);
+
+    const s32 x = (s32)gen->GetArgDWord(0);
+    const s32 y = (s32)gen->GetArgDWord(1);
+    const s32 a = (s32)gen->GetArgDWord(2);
+    const s32 b = (s32)gen->GetArgDWord(3);
+    const u8 color = gen->GetArgByte(4);
+
+    core->api.ellib(mem, x, y, a, b, color);
 }
 
 static void as_paint(asIScriptGeneric* gen)
@@ -288,7 +400,60 @@ static void as_ttri(asIScriptGeneric* gen)
 {
     GET_TIC_CORE(ctx, core, mem);
 
-    // TODO: ttri
+    float pt[12];
+    for (int i = 0; i < COUNT_OF(pt); i++)
+        pt[i] = gen->GetArgFloat(i);
+
+    static u8 colors[TIC_PALETTE_SIZE];
+    s32 count = 0;
+    tic_texture_src src = tic_tiles_texture;
+
+    // check for texture src
+    if (gen->GetArgCount() > 12)
+    {
+        src = (tic_texture_src)gen->GetArgByte(12);
+    }
+
+    // check for chroma
+    if (gen->GetArgCount() > 13)
+    {
+        if (gen->GetArgTypeId(13) == asTYPEID_INT32)
+        {
+            colors[0] = (u8)gen->GetArgDWord(13);
+            count = 1;
+        }
+        else
+        {
+            const CScriptArray* colorkeys = static_cast<const CScriptArray*>(gen->GetArgObject(13));
+            for (asUINT i = 0; i < colorkeys->GetSize() && i < TIC_PALETTE_SIZE; i++)
+            {
+                colors[i] = (u8)*(asDWORD*)colorkeys->At(i);
+                count++;
+            }
+            colorkeys->Release();
+        }
+    }
+
+    float z[3] = {0, 0, 0};
+    bool depth = false;
+
+    if (gen->GetArgCount() == 17)
+    {
+        for (s32 i = 0; i < COUNT_OF(z); i++)
+            z[i] = gen->GetArgFloat(i + 14);
+
+        depth = true;
+    }
+
+    core->api.ttri(mem, pt[0], pt[1],   //  xy 1
+                        pt[2], pt[3],   //  xy 2
+                        pt[4], pt[5],   //  xy 3
+                        pt[6], pt[7],   //  uv 1
+                        pt[8], pt[9],   //  uv 2
+                        pt[10], pt[11], //  uv 3
+                        src,            // texture source
+                        colors, count,  // chroma
+                        z[0], z[1], z[2], depth); // depth
 }
 
 static void as_clip(asIScriptGeneric* gen)
@@ -313,12 +478,26 @@ static void as_btnp(asIScriptGeneric* gen)
 {
     GET_TIC_CORE(ctx, core, mem);
 
-    const s32 id = (s32)gen->GetArgDWord(0);
-    const s32 hold = (s32)gen->GetArgDWord(1);
-    const s32 period = (s32)gen->GetArgDWord(2);
+    if (gen->GetArgCount() == 0)
+    {
+        bool rv = core->api.btnp(mem, -1, -1, -1);
+        gen->SetReturnByte(rv ? 1 : 0);
+        return;
+    }
 
-    bool rv = core->api.btnp(mem, id, hold, period) != 0;
-    *(bool*)gen->GetAddressOfReturnLocation() = rv;
+    const s32 index = (s32)gen->GetArgDWord(0);
+    if (gen->GetArgCount() == 1)
+    {
+        bool rv = core->api.btnp(mem, index, -1, -1);
+        gen->SetReturnByte(rv ? 1 : 0);
+        return;
+    }
+
+    const s32 hold = (u32)gen->GetArgDWord(1);
+    const s32 period = (u32)gen->GetArgDWord(2);
+
+    bool rv = core->api.btnp(mem, index, hold, period);
+    gen->SetReturnByte(rv ? 1 : 0);
 }
 
 static void as_btn(asIScriptGeneric* gen)
@@ -328,7 +507,7 @@ static void as_btn(asIScriptGeneric* gen)
     const s32 id = (s32)gen->GetArgDWord(0);
 
     bool rv = core->api.btn(mem, id) != 0;
-    *(bool*)gen->GetAddressOfReturnLocation() = rv;
+    gen->SetReturnByte(rv ? 1 : 0);
 }
 
 static void as_spr(asIScriptGeneric* gen)
@@ -345,25 +524,25 @@ static void as_spr(asIScriptGeneric* gen)
     const s32 h = (s32)gen->GetArgDWord(8);
 
     u8 colors[TIC_PALETTE_SIZE];
-    int colors_count = 1;
+    int colors_count = 0;
 
     if (gen->GetArgTypeId(3) == asTYPEID_INT32)
     {
         colors[0] = (u8)gen->GetArgDWord(3);
+        colors_count = 1;
     }
     else
     {
         const CScriptArray* colorkeys = static_cast<const CScriptArray*>(gen->GetArgObject(3));
         for (asUINT i = 0; i < colorkeys->GetSize() && i < TIC_PALETTE_SIZE; i++)
         {
-            asDWORD color = *(asDWORD*)colorkeys->At(i);
-            colors[i] = (u8)color;
+            colors[i] = (u8)*(asDWORD*)colorkeys->At(i);
             colors_count++;
         }
         colorkeys->Release();
     }
 
-    core->api.spr(mem, id, x, y, w, h, colors, colors_count, scale, tic_flip(flip), tic_rotate(rotate));
+    core->api.spr(mem, id, x, y, w, h, colors, colors_count, scale, (tic_flip)flip, (tic_rotate)rotate);
 }
 
 static void as_mget(asIScriptGeneric* gen)
@@ -374,7 +553,7 @@ static void as_mget(asIScriptGeneric* gen)
     const s32 y = (s32)gen->GetArgDWord(1);
 
     u8 rv = core->api.mget(mem, x, y);
-    *(u8*)gen->GetAddressOfReturnLocation() = rv;
+    gen->SetReturnByte(rv);
 }
 
 static void as_mset(asIScriptGeneric* gen)
@@ -519,7 +698,7 @@ static void as_vbank(asIScriptGeneric* gen)
         core->api.vbank(mem, bank);
     }
 
-    *(s32*)gen->GetAddressOfReturnLocation() = prev;
+    gen->SetReturnDWord(prev);
 }
 
 static void as_sync(asIScriptGeneric* gen)
@@ -555,7 +734,7 @@ static void as_key(asIScriptGeneric* gen)
     if (gen->GetArgCount() == 0)
     {
         bool rv = core->api.key(mem, tic_key_unknown);
-        *(bool*)gen->GetAddressOfReturnLocation() = rv;
+        gen->SetReturnByte(rv ? 1 : 0);
         return;
     }
 
@@ -563,7 +742,7 @@ static void as_key(asIScriptGeneric* gen)
     if (key < tic_keys_count)
     {
         bool rv = core->api.key(mem, key);
-        *(bool*)gen->GetAddressOfReturnLocation() = rv;
+        gen->SetReturnByte(rv ? 1 : 0);
     }
     else
     {
@@ -577,14 +756,14 @@ static void as_keyp(asIScriptGeneric* gen)
 {
     GET_TIC_CORE(ctx, core, mem);
 
-    const tic_key key = gen->GetArgByte(0);
     if (gen->GetArgCount() == 0)
     {
         bool rv = core->api.keyp(mem, tic_key_unknown, -1, -1);
-        *(bool*)gen->GetAddressOfReturnLocation() = rv;
+        gen->SetReturnByte(rv ? 1 : 0);
         return;
     }
 
+    const tic_key key = gen->GetArgByte(0);
     if (key >= tic_keys_count)
     {
         char buf[128];
@@ -596,15 +775,15 @@ static void as_keyp(asIScriptGeneric* gen)
     if (gen->GetArgCount() == 1)
     {
         bool rv = core->api.keyp(mem, key, -1, -1);
-        *(bool*)gen->GetAddressOfReturnLocation() = rv;
+        gen->SetReturnByte(rv ? 1 : 0);
         return;
     }
 
-    const s32 hold = (u32)gen->GetArgDWord(2);
-    const s32 period = (u32)gen->GetArgDWord(3);
+    const s32 hold = (u32)gen->GetArgDWord(1);
+    const s32 period = (u32)gen->GetArgDWord(2);
 
     bool rv = core->api.keyp(mem, key, hold, period);
-    *(bool*)gen->GetAddressOfReturnLocation() = rv;
+    gen->SetReturnByte(rv ? 1 : 0);
 }
 
 static void as_memcpy(asIScriptGeneric* gen)
@@ -632,6 +811,19 @@ static void as_memset(asIScriptGeneric* gen)
 static void as_font(asIScriptGeneric* gen)
 {
     GET_TIC_CORE(ctx, core, mem);
+
+    string text = asToString(gen, 0);
+    const s32 x = (s32)gen->GetArgDWord(1);
+    const s32 y = (s32)gen->GetArgDWord(2);
+    u8 chromakey = gen->GetArgByte(3);
+    const s32 char_width = (s32)gen->GetArgDWord(4);
+    const s32 char_height = (s32)gen->GetArgDWord(5);
+    const bool fixed = *(bool*)gen->GetAddressOfArg(6);
+    const s32 scale = (s32)gen->GetArgDWord(7);
+    const bool alt = *(bool*)gen->GetAddressOfArg(8);
+
+    s32 size = core->api.font(mem, text.c_str(), x, y, &chromakey, 1, char_width, char_height, fixed, scale, alt);
+    gen->SetReturnDWord(size);
 }
 
 static void as_print(asIScriptGeneric* gen)
@@ -647,7 +839,7 @@ static void as_print(asIScriptGeneric* gen)
     const bool alt = *(bool*)gen->GetAddressOfArg(6);
 
     s32 width = core->api.print(mem, text.c_str(), x, y, color, fixed, scale, alt);
-    *(s32*)gen->GetAddressOfReturnLocation() = width;
+    gen->SetReturnDWord(width);
 }
 
 static void as_trace(asIScriptGeneric* gen)
@@ -668,7 +860,7 @@ static void as_pmem(asIScriptGeneric* gen)
     if (gen->GetArgCount() == 1)
     {
         u32 value = core->api.pmem(mem, index, 0, false);
-        *(u32*)gen->GetAddressOfReturnLocation() = value;
+        gen->SetReturnDWord(value);
     }
     else
     {
@@ -682,7 +874,7 @@ static void as_time(asIScriptGeneric* gen)
     GET_TIC_CORE(ctx, core, mem);
 
     double rv = core->api.time(mem);
-    *(double*)gen->GetAddressOfReturnLocation() = rv;
+    gen->SetReturnDouble(rv);
 }
 
 static void as_tstamp(asIScriptGeneric* gen)
@@ -690,7 +882,7 @@ static void as_tstamp(asIScriptGeneric* gen)
     GET_TIC_CORE(ctx, core, mem);
 
     s32 rv = core->api.tstamp(mem);
-    *(s32*)gen->GetAddressOfReturnLocation() = rv;
+    gen->SetReturnDWord(rv);
 }
 
 static void as_exit(asIScriptGeneric* gen)
@@ -732,7 +924,7 @@ static void as_fget(asIScriptGeneric* gen)
     const u8 flag = gen->GetArgByte(1);
 
     bool rv = core->api.fget(mem, index, flag);
-    *(bool*)gen->GetAddressOfReturnLocation() = rv;
+    gen->SetReturnByte(rv ? 1 : 0);
 }
 
 static void as_fset(asIScriptGeneric* gen)
@@ -749,11 +941,15 @@ static void as_fset(asIScriptGeneric* gen)
 static void as_fft(asIScriptGeneric* gen)
 {
     GET_TIC_CORE(ctx, core, mem);
+
+    // TODO: remove?
 }
 
 static void as_ffts(asIScriptGeneric* gen)
 {
     GET_TIC_CORE(ctx, core, mem);
+
+    // TODO: remove?
 }
 
 static void initAPI(tic_core* core)
@@ -786,12 +982,13 @@ static void initAPI(tic_core* core)
     REGISTER_TIC(vm, as_tri, "void tri(float x1, float y1, float x2, float y2, float x3, float y3, uint8 color)");
     REGISTER_TIC(vm, as_trib, "void trib(float x1, float y1, float x2, float y2, float x3, float y3, uint8 color)");
     REGISTER_TIC(vm, as_ttri, "void ttri(float x1, float y1, float x2, float y2, float x3, float y3, float u1, float v1, float u2, float v2, float u3, float v3)");
-    REGISTER_TIC(vm, as_ttri, "void ttri(float x1, float y1, float x2, float y2, float x3, float y3, float u1, float v1, float u2, float v2, float u3, float v3, int texsrc)");
-    REGISTER_TIC(vm, as_ttri, "void ttri(float x1, float y1, float x2, float y2, float x3, float y3, float u1, float v1, float u2, float v2, float u3, float v3, int texsrc, uint8 chromakey, float z1=0, float z2=0, float z3=0)");
-    REGISTER_TIC(vm, as_ttri, "void ttri(float x1, float y1, float x2, float y2, float x3, float y3, float u1, float v1, float u2, float v2, float u3, float v3, int texsrc, const array<int>@ chromakey, float z1=0, float z2=0, float z3=0)");
+    REGISTER_TIC(vm, as_ttri, "void ttri(float x1, float y1, float x2, float y2, float x3, float y3, float u1, float v1, float u2, float v2, float u3, float v3, uint8 texsrc)");
+    REGISTER_TIC(vm, as_ttri, "void ttri(float x1, float y1, float x2, float y2, float x3, float y3, float u1, float v1, float u2, float v2, float u3, float v3, uint8 texsrc, int chromakey, float z1=0, float z2=0, float z3=0)");
+    REGISTER_TIC(vm, as_ttri, "void ttri(float x1, float y1, float x2, float y2, float x3, float y3, float u1, float v1, float u2, float v2, float u3, float v3, uint8 texsrc, const array<int>@ chromakey, float z1=0, float z2=0, float z3=0)");
     REGISTER_TIC(vm, as_clip, "void clip()");
     REGISTER_TIC(vm, as_clip, "void clip(int x, int y, int width, int height)");
-    REGISTER_TIC(vm, as_btnp, "bool btnp(int id, int hold=-1, int period=-1)");
+    REGISTER_TIC(vm, as_btnp, "bool btnp(int id)");
+    REGISTER_TIC(vm, as_btnp, "bool btnp(int id, int hold, int period)");
     REGISTER_TIC(vm, as_btn, "bool btn(int id)");
     REGISTER_TIC(vm, as_spr, "void spr(int id, int x, int y, int colorkey=-1, int scale=1, uint8 flip=0, uint8 rotate=0, int w=1, int h=1)");
     REGISTER_TIC(vm, as_spr, "void spr(int id, int x, int y, const array<int>@ colorkey, int scale=1, uint8 flip=0, uint8 rotate=0, int w=1, int h=1)");
@@ -825,7 +1022,7 @@ static void initAPI(tic_core* core)
     REGISTER_TIC(vm, as_keyp, "bool keyp(int code, int hold, int period)");
     REGISTER_TIC(vm, as_memcpy, "void memcpy(int dest, int source, int size)");
     REGISTER_TIC(vm, as_memset, "void memset(int dest, uint8 value, int size)");
-    REGISTER_TIC(vm, as_font, "int font(const ?&in text, int x, int y, int chromakey, int char_width, int char_height, bool fixed=false, int scale=1, bool alt=false)");
+    REGISTER_TIC(vm, as_font, "int font(const ?&in text, int x, int y, uint8 chromakey, int char_width, int char_height, bool fixed=false, int scale=1, bool alt=false)");
     REGISTER_TIC(vm, as_print, "int print(const ?&in text, int x=0, int y=0, uint8 color=15, bool fixed=false, int scale=1, bool smallfont=false)");
     REGISTER_TIC(vm, as_trace, "void trace(const ?&in text, uint8 color=15)");
     REGISTER_TIC(vm, as_pmem, "void pmem(int index, uint value)");
@@ -902,7 +1099,10 @@ static bool initAngelScript(tic_mem* tic, const char* code)
         return false;
     }
 
+    vm->borderFunction = vm->module->GetFunctionByDecl("void BDR(int row)");
     vm->bootFunction = vm->module->GetFunctionByDecl("void BOOT()");
+    vm->menuFunction = vm->module->GetFunctionByDecl("void MENU(int index)");
+    vm->scanlineFunction = vm->module->GetFunctionByDecl("void SCN(int row)");
     vm->tickFunction = vm->module->GetFunctionByDecl("void TIC()");
 
     return true;
@@ -913,15 +1113,10 @@ static void callAngelScriptTick(tic_mem* tic)
     tic_core* core = (tic_core*)tic;
 
     ANGELSCRIPTVM* vm = static_cast<ANGELSCRIPTVM*>(core->currentVM);
-    if (vm)
+    if (vm && vm->tickFunction)
     {
-        if (vm->tickFunction)
-        {
-            int r = vm->context->Prepare(vm->tickFunction);
-            assert(r >= 0);
-
-            r = vm->context->Execute();
-        }
+        int r = vm->context->Prepare(vm->tickFunction); assert(r >= 0);
+        r = vm->context->Execute(); assert(r >= 0);
     }
 }
 
@@ -930,20 +1125,52 @@ static void callAngelScriptBoot(tic_mem* tic)
     tic_core* core = (tic_core*)tic;
 
     ANGELSCRIPTVM* vm = static_cast<ANGELSCRIPTVM*>(core->currentVM);
-    if (vm)
+    if (vm && vm->bootFunction)
     {
-        if (vm->bootFunction)
-        {
-            int r = vm->context->Prepare(vm->bootFunction);
-            assert(r >= 0);
-
-            r = vm->context->Execute();
-        }
+        int r = vm->context->Prepare(vm->bootFunction); assert(r >= 0);
+        r = vm->context->Execute(); assert(r >= 0);
     }
 }
-static void callAngelScriptScanline(tic_mem* tic, s32 row, void* data) { }
-static void callAngelScriptBorder(tic_mem* tic, s32 row, void* data) { }
-static void callAngelScriptMenu(tic_mem* tic, s32 index, void* data) { }
+
+static void callAngelScriptScanline(tic_mem* tic, s32 row, void* data)
+{
+    tic_core* core = (tic_core*)tic;
+
+    ANGELSCRIPTVM* vm = static_cast<ANGELSCRIPTVM*>(core->currentVM);
+    if (vm && vm->scanlineFunction)
+    {
+        int r = vm->context->Prepare(vm->scanlineFunction); assert(r >= 0);
+        r = vm->context->SetArgDWord(0, row); assert(r >= 0);
+        r = vm->context->Execute(); assert(r >= 0);
+    }
+}
+
+static void callAngelScriptBorder(tic_mem* tic, s32 row, void* data)
+{
+    tic_core* core = (tic_core*)tic;
+
+    ANGELSCRIPTVM* vm = static_cast<ANGELSCRIPTVM*>(core->currentVM);
+    if (vm && vm->borderFunction)
+    {
+        int r = vm->context->Prepare(vm->borderFunction); assert(r >= 0);
+        r = vm->context->SetArgDWord(0, row); assert(r >= 0);
+        r = vm->context->Execute(); assert(r >= 0);
+    }
+}
+
+static void callAngelScriptMenu(tic_mem* tic, s32 index, void* data)
+{
+    tic_core* core = (tic_core*)tic;
+
+    ANGELSCRIPTVM* vm = static_cast<ANGELSCRIPTVM*>(core->currentVM);
+    if (vm && vm->menuFunction)
+    {
+        int r = vm->context->Prepare(vm->menuFunction); assert(r >= 0);
+        r = vm->context->SetArgDWord(0, index); assert(r >= 0);
+        r = vm->context->Execute(); assert(r >= 0);
+    }
+}
+
 static const tic_outline_item* getAngelScriptOutline(const char* code, s32* size) { return NULL; }
 static void evalAngelScript(tic_mem* tic, const char* code) { }
 
