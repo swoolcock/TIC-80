@@ -79,10 +79,11 @@ if(BUILD_WITH_ANGELSCRIPT)
         ${ANGELSCRIPT_DIR}/add_on/scriptany/scriptany.cpp
         ${ANGELSCRIPT_DIR}/add_on/scriptarray/scriptarray.cpp
         ${ANGELSCRIPT_DIR}/add_on/scriptdictionary/scriptdictionary.cpp
-        ${ANGELSCRIPT_DIR}/add_on/scriptgrid/scriptgrid.cpp
+#        ${ANGELSCRIPT_DIR}/add_on/scriptgrid/scriptgrid.cpp
         ${ANGELSCRIPT_DIR}/add_on/scripthandle/scripthandle.cpp
+        ${ANGELSCRIPT_DIR}/add_on/scripthelper/scripthelper.cpp
         ${ANGELSCRIPT_DIR}/add_on/scriptmath/scriptmath.cpp
-        ${ANGELSCRIPT_DIR}/add_on/scriptmath/scriptmathcomplex.cpp
+#        ${ANGELSCRIPT_DIR}/add_on/scriptmath/scriptmathcomplex.cpp
         ${ANGELSCRIPT_DIR}/add_on/scriptstdstring/scriptstdstring.cpp
         ${ANGELSCRIPT_DIR}/add_on/scriptstdstring/scriptstdstring_utils.cpp
         ${ANGELSCRIPT_DIR}/add_on/weakref/weakref.cpp
@@ -117,8 +118,9 @@ if(BUILD_WITH_ANGELSCRIPT)
             ${ANGELSCRIPT_DIR}/add_on/scriptany
             ${ANGELSCRIPT_DIR}/add_on/scriptarray
             ${ANGELSCRIPT_DIR}/add_on/scriptdictionary
-            ${ANGELSCRIPT_DIR}/add_on/scriptgrid
+#            ${ANGELSCRIPT_DIR}/add_on/scriptgrid
             ${ANGELSCRIPT_DIR}/add_on/scripthandle
+            ${ANGELSCRIPT_DIR}/add_on/scripthelper
             ${ANGELSCRIPT_DIR}/add_on/scriptmath
             ${ANGELSCRIPT_DIR}/add_on/scriptstdstring
             ${ANGELSCRIPT_DIR}/add_on/weakref

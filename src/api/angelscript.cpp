@@ -3,10 +3,13 @@
 //
 #include "core/core.h"
 
+#include <assert.h>
+#include <inttypes.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 #include <ctype.h>
+#include <string>
 
 #include "tools.h"
 #include "angelscript.h"
@@ -14,18 +17,13 @@
 #include "scriptany.h"
 #include "scriptarray.h"
 #include "scriptdictionary.h"
-#include "scriptgrid.h"
+// #include "scriptgrid.h"
 #include "scripthandle.h"
+#include "scripthelper.h"
 #include "scriptmath.h"
+// #include "scriptmathcomplex.h"
 #include "scriptstdstring.h"
 #include "weakref.h"
-
-#include <assert.h>
-#include <inttypes.h>
-
-#include "scriptmathcomplex.h"
-
-#include <string>
 
 typedef std::string string;
 
@@ -80,6 +78,23 @@ static void asMessageCallback(const asSMessageInfo *msg, void *param)
 
     char buf[1024];
     snprintf(buf, sizeof(buf), "%s (%d, %d) : %s : %s", msg->section, msg->row, msg->col, type, msg->message);
+    core->data->error(core->data->data, buf);
+}
+
+static void asExceptionCallback(asIScriptContext *ctx, void *param)
+{
+    // if the exception is caught, do nothing
+    if (ctx->WillExceptionBeCaught()) return;
+
+    tic_core* core = static_cast<tic_core*>(param);
+    const asIScriptFunction *func = ctx->GetExceptionFunction();
+
+    char buf[2048];
+    snprintf(buf, sizeof(buf),
+        "desc: %s\nfunc: %s\nline: %d\n",
+        ctx->GetExceptionString(),
+        func->GetDeclaration(),
+        ctx->GetExceptionLineNumber());
     core->data->error(core->data->data, buf);
 }
 
@@ -233,39 +248,84 @@ static void as_ellib(asIScriptGeneric* gen)
 static void as_paint(asIScriptGeneric* gen)
 {
     GET_TIC_CORE(ctx, core, mem);
+
+    // TODO: remove paint?
 }
 
 static void as_tri(asIScriptGeneric* gen)
 {
     GET_TIC_CORE(ctx, core, mem);
+
+    const float x1 = gen->GetArgFloat(0);
+    const float y1 = gen->GetArgFloat(1);
+    const float x2 = gen->GetArgFloat(2);
+    const float y2 = gen->GetArgFloat(3);
+    const float x3 = gen->GetArgFloat(4);
+    const float y3 = gen->GetArgFloat(5);
+    const u8 color = gen->GetArgByte(6);
+
+    core->api.tri(mem, x1, y1, x2, y2, x3, y3, color);
 }
 
 static void as_trib(asIScriptGeneric* gen)
 {
     GET_TIC_CORE(ctx, core, mem);
+
+    const float x1 = gen->GetArgFloat(0);
+    const float y1 = gen->GetArgFloat(1);
+    const float x2 = gen->GetArgFloat(2);
+    const float y2 = gen->GetArgFloat(3);
+    const float x3 = gen->GetArgFloat(4);
+    const float y3 = gen->GetArgFloat(5);
+    const u8 color = gen->GetArgByte(6);
+
+    core->api.trib(mem, x1, y1, x2, y2, x3, y3, color);
 }
 
 static void as_ttri(asIScriptGeneric* gen)
 {
     GET_TIC_CORE(ctx, core, mem);
+
+    // TODO: ttri
 }
 
 static void as_clip(asIScriptGeneric* gen)
 {
     GET_TIC_CORE(ctx, core, mem);
+
+    if (gen->GetArgCount() == 0)
+    {
+        core->api.clip(mem, 0, 0, TIC80_WIDTH, TIC80_HEIGHT);
+    }
+    else
+    {
+        const s32 x = (s32)gen->GetArgDWord(0);
+        const s32 y = (s32)gen->GetArgDWord(1);
+        const s32 width = (s32)gen->GetArgDWord(2);
+        const s32 height = (s32)gen->GetArgDWord(3);
+        core->api.clip(mem, x, y, width, height);
+    }
 }
 
 static void as_btnp(asIScriptGeneric* gen)
 {
     GET_TIC_CORE(ctx, core, mem);
+
+    const s32 id = (s32)gen->GetArgDWord(0);
+    const s32 hold = (s32)gen->GetArgDWord(1);
+    const s32 period = (s32)gen->GetArgDWord(2);
+
+    bool rv = core->api.btnp(mem, id, hold, period) != 0;
+    *(bool*)gen->GetAddressOfReturnLocation() = rv;
 }
 
 static void as_btn(asIScriptGeneric* gen)
 {
     GET_TIC_CORE(ctx, core, mem);
 
-    const s32 button = (s32)gen->GetArgDWord(0);
-    bool rv = core->api.btn(mem, button) != 0;
+    const s32 id = (s32)gen->GetArgDWord(0);
+
+    bool rv = core->api.btn(mem, id) != 0;
     *(bool*)gen->GetAddressOfReturnLocation() = rv;
 }
 
@@ -307,41 +367,97 @@ static void as_spr(asIScriptGeneric* gen)
 static void as_mget(asIScriptGeneric* gen)
 {
     GET_TIC_CORE(ctx, core, mem);
+
+    const s32 x = (s32)gen->GetArgDWord(0);
+    const s32 y = (s32)gen->GetArgDWord(1);
+
+    u8 rv = core->api.mget(mem, x, y);
+    *(u8*)gen->GetAddressOfReturnLocation() = rv;
 }
 
 static void as_mset(asIScriptGeneric* gen)
 {
     GET_TIC_CORE(ctx, core, mem);
+
+    const s32 x = (s32)gen->GetArgDWord(0);
+    const s32 y = (s32)gen->GetArgDWord(1);
+    const u8 tile_id = gen->GetArgByte(2);
+
+    core->api.mset(mem, x, y, tile_id);
 }
 
 static void as_map(asIScriptGeneric* gen)
 {
     GET_TIC_CORE(ctx, core, mem);
+
+    // TODO: map
 }
 
 static void as_music(asIScriptGeneric* gen)
 {
     GET_TIC_CORE(ctx, core, mem);
+
+    const s32 track = (s32)gen->GetArgDWord(0);
+    const s32 frame = (s32)gen->GetArgDWord(1);
+    const s32 row = (s32)gen->GetArgDWord(2);
+    const bool loop = *(bool*)gen->GetAddressOfArg(3);
+    const bool sustain = *(bool*)gen->GetAddressOfArg(4);
+    const s32 tempo = (s32)gen->GetArgDWord(5);
+    const s32 speed = (s32)gen->GetArgDWord(6);
+
+    core->api.music(mem, track, frame, row, loop, sustain, tempo, speed);
 }
 
 static void as_sfx(asIScriptGeneric* gen)
 {
     GET_TIC_CORE(ctx, core, mem);
+
+    const s32 id = (s32)gen->GetArgDWord(0);
+    const s32 note = (s32)gen->GetArgDWord(1);
+    const s32 duration = (s32)gen->GetArgDWord(2);
+    const s32 channel = (s32)gen->GetArgDWord(3);
+    const s32 volume = (s32)gen->GetArgDWord(4);
+    const s32 speed = (s32)gen->GetArgDWord(5);
+
+    // TODO: sfx
+    // core->api.sfx(mem, id, note, duration, channel, volume, speed);
 }
 
 static void as_vbank(asIScriptGeneric* gen)
 {
     GET_TIC_CORE(ctx, core, mem);
+
+    const s32 prev = core->state.vbank.id;
+
+    if (gen->GetArgCount() == 1)
+    {
+        const s32 bank = (s32)gen->GetArgDWord(0);
+        core->api.vbank(mem, bank);
+    }
+
+    *(s32*)gen->GetAddressOfReturnLocation() = prev;
 }
 
 static void as_sync(asIScriptGeneric* gen)
 {
     GET_TIC_CORE(ctx, core, mem);
+
+    const u32 mask = (u32)gen->GetArgDWord(0);
+    const s32 bank = (u32)gen->GetArgDWord(1);
+    const bool tocart = *(bool*)gen->GetAddressOfArg(2);
+
+    if (bank >= 0 && bank < TIC_BANKS)
+        core->api.sync(mem, mask, bank, tocart);
+    else
+        ; // TODO: error
 }
 
 static void as_reset(asIScriptGeneric* gen)
 {
     GET_TIC_CORE(ctx, core, mem);
+
+    ctx->SetException("foobar");
+    // core->api.reset(mem);
 }
 
 static void as_key(asIScriptGeneric* gen)
@@ -357,11 +473,23 @@ static void as_keyp(asIScriptGeneric* gen)
 static void as_memcpy(asIScriptGeneric* gen)
 {
     GET_TIC_CORE(ctx, core, mem);
+
+    const s32 dest = (s32)gen->GetArgDWord(0);
+    const s32 source = (s32)gen->GetArgDWord(1);
+    const s32 size = (s32)gen->GetArgDWord(2);
+
+    core->api.memcpy(mem, dest, source, size);
 }
 
 static void as_memset(asIScriptGeneric* gen)
 {
     GET_TIC_CORE(ctx, core, mem);
+
+    const s32 dest = (s32)gen->GetArgDWord(0);
+    const u8 value = gen->GetArgByte(1);
+    const s32 size = (s32)gen->GetArgDWord(2);
+
+    core->api.memset(mem, dest, value, size);
 }
 
 static void as_font(asIScriptGeneric* gen)
@@ -388,26 +516,51 @@ static void as_print(asIScriptGeneric* gen)
 static void as_trace(asIScriptGeneric* gen)
 {
     GET_TIC_CORE(ctx, core, mem);
+
+    string text = asToString(gen, 0);
+    const u8 color = gen->GetArgByte(1);
+    core->api.trace(mem, text.c_str(), color);
 }
 
 static void as_pmem(asIScriptGeneric* gen)
 {
     GET_TIC_CORE(ctx, core, mem);
+
+    const s32 index = (s32)gen->GetArgDWord(0);
+
+    if (gen->GetArgCount() == 1)
+    {
+        u32 value = core->api.pmem(mem, index, 0, false);
+        *(u32*)gen->GetAddressOfReturnLocation() = value;
+    }
+    else
+    {
+        const u32 value = (u32)gen->GetArgDWord(1);
+        core->api.pmem(mem, index, value, true);
+    }
 }
 
 static void as_time(asIScriptGeneric* gen)
 {
     GET_TIC_CORE(ctx, core, mem);
+
+    double rv = core->api.time(mem);
+    *(double*)gen->GetAddressOfReturnLocation() = rv;
 }
 
 static void as_tstamp(asIScriptGeneric* gen)
 {
     GET_TIC_CORE(ctx, core, mem);
+
+    s32 rv = core->api.tstamp(mem);
+    *(s32*)gen->GetAddressOfReturnLocation() = rv;
 }
 
 static void as_exit(asIScriptGeneric* gen)
 {
     GET_TIC_CORE(ctx, core, mem);
+
+    core->api.exit(mem);
 }
 
 static void as_mouse(asIScriptGeneric* gen)
@@ -437,11 +590,23 @@ static void as_mouse(asIScriptGeneric* gen)
 static void as_fget(asIScriptGeneric* gen)
 {
     GET_TIC_CORE(ctx, core, mem);
+
+    const s32 index = (s32)gen->GetArgDWord(0);
+    const u8 flag = gen->GetArgByte(1);
+
+    bool rv = core->api.fget(mem, index, flag);
+    *(bool*)gen->GetAddressOfReturnLocation() = rv;
 }
 
 static void as_fset(asIScriptGeneric* gen)
 {
     GET_TIC_CORE(ctx, core, mem);
+
+    const s32 index = (s32)gen->GetArgDWord(0);
+    const u8 flag = gen->GetArgByte(1);
+    const bool value = *(bool*)gen->GetAddressOfArg(2);
+
+    core->api.fset(mem, index, flag, value);
 }
 
 static void as_fft(asIScriptGeneric* gen)
@@ -551,16 +716,17 @@ static bool initAngelScript(tic_mem* tic, const char* code)
         return false;
     }
 
-    // RegisterScriptAny(vm->engine);
-    RegisterScriptArray(vm->engine, true);
-    // RegisterScriptDictionary(vm->engine);
-    // RegisterScriptGrid(vm->engine);
-    // RegisterScriptHandle(vm->engine);
-    RegisterScriptMath(vm->engine);
-    // RegisterScriptMathComplex(vm->engine);
     RegisterStdString(vm->engine);
-    // RegisterStdStringUtils(vm->engine);
-    // RegisterScriptWeakRef(vm->engine);
+    RegisterScriptAny(vm->engine);
+    RegisterScriptArray(vm->engine, true);
+    RegisterScriptDictionary(vm->engine);
+    // TODO: RegisterScriptGrid(vm->engine); apparently doesn't support generic calling convention
+    RegisterScriptHandle(vm->engine);
+    RegisterExceptionRoutines(vm->engine);
+    RegisterScriptMath(vm->engine);
+    // TODO: RegisterScriptMathComplex(vm->engine); apparently doesn't support generic calling convention
+    RegisterStdStringUtils(vm->engine);
+    RegisterScriptWeakRef(vm->engine);
 
     vm->context = vm->engine->CreateContext();
     if (!vm->context)
@@ -570,6 +736,8 @@ static bool initAngelScript(tic_mem* tic, const char* code)
     }
 
     vm->context->SetUserData(core);
+
+    vm->context->SetExceptionCallback(asFUNCTION(asExceptionCallback), core, asCALL_CDECL);
 
     initAPI(core);
 
@@ -598,7 +766,7 @@ static void callAngelScriptTick(tic_mem* tic)
             int r = vm->context->Prepare(vm->tickFunction);
             assert(r >= 0);
 
-            vm->context->Execute();
+            r = vm->context->Execute();
         }
     }
 }
@@ -615,7 +783,7 @@ static void callAngelScriptBoot(tic_mem* tic)
             int r = vm->context->Prepare(vm->bootFunction);
             assert(r >= 0);
 
-            vm->context->Execute();
+            r = vm->context->Execute();
         }
     }
 }
@@ -627,73 +795,37 @@ static void evalAngelScript(tic_mem* tic, const char* code) { }
 
 static const char* const AngelScriptKeywords [] =
 {
-"and",
-"auto",
-"bool",
-"break",
-"case",
-"cast",
-"catch",
-"class",
-"const",
-"continue",
-"default",
-"do",
-"double",
-"else",
-"enum",
-"false",
-"float",
-"for",
-"foreach",
-"funcdef",
-"if",
-"import",
-"in",
-"inout",
-"int",
-"interface",
-"int8",
-"int16",
-"int32",
-"int64",
-"is",
-"mixin",
-"namespace",
-"not",
-"null",
-"or",
-"out",
-"private",
-"protected",
-"return",
-"switch",
-"true",
-"try",
-"typedef",
-"uint",
-"uint8",
-"uint16",
-"uint32",
-"uint64",
-"using",
-"void",
-"while",
-"xor",
-"abstract",
-"delete",
-"explicit",
-"external",
-"final",
-"from",
-"function",
-"get",
-"override",
-"property",
-"set",
-"shared",
-"super",
-"this",
+    // official keywords
+    "and","auto","bool","break","case","cast","catch","class","const","continue","default","do","double",
+    "else","enum","false","float","for","foreach","funcdef","if","import","in","inout","int","interface","int8",
+    "int16","int32","int64","is","mixin","namespace","not","null","or","out","private","protected","return",
+    "switch","true","try","typedef","uint","uint8","uint16","uint32","uint64","using","void","while","xor",
+    "abstract","delete","explicit","external","final","from","function","get","override","property","set","shared",
+    "super","this",
+};
+
+static const char* AngelScriptAPIKeywords [] =
+{
+#define TIC_CALLBACK_DEF(name, ...) #name,
+    TIC_CALLBACK_LIST(TIC_CALLBACK_DEF)
+#undef  TIC_CALLBACK_DEF
+
+#define API_KEYWORD_DEF(name, ...) #name,
+    TIC_API_LIST(API_KEYWORD_DEF)
+#undef  API_KEYWORD_DEF
+
+    // addon types and global functions (not doing all the methods!)
+    "any", // scriptany
+    "array", // scriptarray
+    "dictionary", "dictionaryIter", "dictionaryValue", // scriptdictionary
+    // "grid", // scriptgrid
+    "ref", // scripthandle
+    "throw", "getExceptionInfo", // scripthelper
+    "cos", "sin", "tan", "acos", "asin", "atan", "atan2", "cosh", "sinh", "tanh", "log", "log10", "pow", "sqrt", "ceil", "abs", "floor", "fraction", // scriptmath
+    // "complex", // scriptmathcomplex
+    "string", "scan", "format", "formatInt", "formatUInt", "formatFloat", "parseInt", "parseUInt", "parseFloat", // scriptstdstring
+    "join", // scriptstdstring_utils
+    "weakref", "const_weakref", // weakref
 };
 
 static const u8 DemoRom[] =
@@ -740,6 +872,8 @@ TIC_EXPORT extern const tic_script EXPORT_SCRIPT(AngelScript) =
 
     .keywords           = AngelScriptKeywords,
     .keywordsCount      = COUNT_OF(AngelScriptKeywords),
+    .api_keywordsCount  = COUNT_OF(AngelScriptAPIKeywords),
+    .api_keywords       = AngelScriptAPIKeywords,
 
     .demo = {DemoRom, sizeof DemoRom},
     .mark = {MarkRom, sizeof MarkRom, "angelscriptmark.tic"},
