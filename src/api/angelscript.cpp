@@ -51,7 +51,9 @@ typedef struct
     asIScriptFunction* bootFunction;
 } ANGELSCRIPTVM;
 
-extern bool parse_note(const char* noteStr, s32* note, s32* octave);
+extern "C" {
+    extern bool parse_note(const char* noteStr, s32* note, s32* octave);
+}
 
 static asIScriptModule* asCompileModule(asIScriptEngine* engine, const char* code)
 {
@@ -405,6 +407,14 @@ static void as_music(asIScriptGeneric* gen)
     const s32 tempo = (s32)gen->GetArgDWord(5);
     const s32 speed = (s32)gen->GetArgDWord(6);
 
+    if (track >= MUSIC_TRACKS)
+    {
+        char buf[128];
+        snprintf(buf, sizeof(buf), "invalid music track index %d", track);
+        ctx->SetException(buf);
+        return;
+    }
+
     core->api.music(mem, track, frame, row, loop, sustain, tempo, speed);
 }
 
@@ -412,15 +422,89 @@ static void as_sfx(asIScriptGeneric* gen)
 {
     GET_TIC_CORE(ctx, core, mem);
 
-    const s32 id = (s32)gen->GetArgDWord(0);
-    const s32 note = (s32)gen->GetArgDWord(1);
-    const s32 duration = (s32)gen->GetArgDWord(2);
-    const s32 channel = (s32)gen->GetArgDWord(3);
-    const s32 volume = (s32)gen->GetArgDWord(4);
-    const s32 speed = (s32)gen->GetArgDWord(5);
+    const s32 index = (s32)gen->GetArgDWord(0);
+    if (index >= SFX_COUNT)
+    {
+        char buf[128];
+        snprintf(buf, sizeof(buf), "unknown sfx index %d", index);
+        ctx->SetException(buf);
+        return;
+    }
 
-    // TODO: sfx
-    // core->api.sfx(mem, id, note, duration, channel, volume, speed);
+    s32 note = -1;
+    s32 octave = -1;
+    s32 duration = -1;
+    s32 channel = 0;
+    s32 volumes[TIC80_SAMPLE_CHANNELS] = {MAX_VOLUME, MAX_VOLUME};
+    s32 speed = SFX_DEF_SPEED;
+
+    if (index >= 0)
+    {
+        tic_sample* effect = mem->ram->sfx.samples.data + index;
+        note = effect->note;
+        octave = effect->octave;
+        speed = effect->speed;
+    }
+
+    if (gen->GetArgCount() >= 2)
+    {
+        if (gen->GetArgTypeId(1) == asTYPEID_INT32)
+        {
+            s32 notearg = (s32)gen->GetArgDWord(1);
+            note = notearg % NOTES;
+            octave = notearg / NOTES;
+        }
+        else
+        {
+            const string* notearg = static_cast<const string*>(gen->GetArgObject(1));
+            if (!parse_note(notearg->c_str(), &note, &octave))
+            {
+                char buf[256];
+                snprintf(buf, sizeof(buf), "invalid note %s, should be like C#4", notearg->c_str());
+                ctx->SetException(buf);
+                return;
+            }
+        }
+    }
+
+    if (gen->GetArgCount() >= 3)
+    {
+        duration = (s32)gen->GetArgDWord(2);
+    }
+
+    if (gen->GetArgCount() >= 4)
+    {
+        channel = (s32)gen->GetArgDWord(3);
+        if (channel < 0 || channel >= TIC_SOUND_CHANNELS)
+        {
+            char buf[128];
+            snprintf(buf, sizeof(buf), "unknown channel %d", channel);
+            ctx->SetException(buf);
+            return;
+        }
+    }
+
+    if (gen->GetArgCount() >= 5)
+    {
+        if (gen->GetArgTypeId(4) == asTYPEID_INT32)
+        {
+            volumes[0] = volumes[1] = (s32)gen->GetArgDWord(4);
+        }
+        else
+        {
+            const CScriptArray* volumesarg = static_cast<const CScriptArray*>(gen->GetArgObject(4));
+            for (asUINT i = 0; i < volumesarg->GetSize() && i < COUNT_OF(volumes); i++)
+                volumes[i] = (s32)*(asDWORD*)volumesarg->At(i);
+            volumesarg->Release();
+        }
+    }
+
+    if (gen->GetArgCount() >= 6)
+    {
+        speed = (s32)gen->GetArgDWord(5);
+    }
+
+    core->api.sfx(mem, index, note, octave, duration, channel, volumes[0] & 0xf, volumes[1] & 0xf, speed);
 }
 
 static void as_vbank(asIScriptGeneric* gen)
@@ -446,28 +530,81 @@ static void as_sync(asIScriptGeneric* gen)
     const s32 bank = (u32)gen->GetArgDWord(1);
     const bool tocart = *(bool*)gen->GetAddressOfArg(2);
 
-    if (bank >= 0 && bank < TIC_BANKS)
-        core->api.sync(mem, mask, bank, tocart);
-    else
-        ; // TODO: error
+    if (bank < 0 || bank >= TIC_BANKS)
+    {
+        char buf[128];
+        snprintf(buf, sizeof(buf), "sync() error, invalid bank %d", bank);
+        ctx->SetException(buf);
+        return;
+    }
+
+    core->api.sync(mem, mask, bank, tocart);
 }
 
 static void as_reset(asIScriptGeneric* gen)
 {
     GET_TIC_CORE(ctx, core, mem);
 
-    ctx->SetException("foobar");
-    // core->api.reset(mem);
+    core->api.reset(mem);
 }
 
 static void as_key(asIScriptGeneric* gen)
 {
     GET_TIC_CORE(ctx, core, mem);
+
+    if (gen->GetArgCount() == 0)
+    {
+        bool rv = core->api.key(mem, tic_key_unknown);
+        *(bool*)gen->GetAddressOfReturnLocation() = rv;
+        return;
+    }
+
+    const tic_key key = gen->GetArgByte(0);
+    if (key < tic_keys_count)
+    {
+        bool rv = core->api.key(mem, key);
+        *(bool*)gen->GetAddressOfReturnLocation() = rv;
+    }
+    else
+    {
+        char buf[128];
+        snprintf(buf, sizeof(buf), "unknown keyboard code %d", key);
+        ctx->SetException(buf);
+    }
 }
 
 static void as_keyp(asIScriptGeneric* gen)
 {
     GET_TIC_CORE(ctx, core, mem);
+
+    const tic_key key = gen->GetArgByte(0);
+    if (gen->GetArgCount() == 0)
+    {
+        bool rv = core->api.keyp(mem, tic_key_unknown, -1, -1);
+        *(bool*)gen->GetAddressOfReturnLocation() = rv;
+        return;
+    }
+
+    if (key >= tic_keys_count)
+    {
+        char buf[128];
+        snprintf(buf, sizeof(buf), "unknown keyboard code %d", key);
+        ctx->SetException(buf);
+        return;
+    }
+
+    if (gen->GetArgCount() == 1)
+    {
+        bool rv = core->api.keyp(mem, key, -1, -1);
+        *(bool*)gen->GetAddressOfReturnLocation() = rv;
+        return;
+    }
+
+    const s32 hold = (u32)gen->GetArgDWord(2);
+    const s32 period = (u32)gen->GetArgDWord(3);
+
+    bool rv = core->api.keyp(mem, key, hold, period);
+    *(bool*)gen->GetAddressOfReturnLocation() = rv;
 }
 
 static void as_memcpy(asIScriptGeneric* gen)
@@ -662,13 +799,30 @@ static void initAPI(tic_core* core)
     REGISTER_TIC(vm, as_mset, "void mset(int x, int y, uint8 tile_id)");
     // REGISTER_TIC(vm, as_map, ""); // TODO: map requires remap callback
     REGISTER_TIC(vm, as_music, "void music(int track=-1, int frame=-1, int row=-1, bool loop=true, bool sustain=false, int tempo=-1, int speed=-1)");
-    REGISTER_TIC(vm, as_sfx, "void sfx(int id, int note=-1, int duration=-1, int channel=0, int volume=15, int speed=0)");
+    REGISTER_TIC(vm, as_sfx, "void sfx(int id)");
+    REGISTER_TIC(vm, as_sfx, "void sfx(int id, int note)");
+    REGISTER_TIC(vm, as_sfx, "void sfx(int id, int note, int duration)");
+    REGISTER_TIC(vm, as_sfx, "void sfx(int id, int note, int duration, int channel)");
+    REGISTER_TIC(vm, as_sfx, "void sfx(int id, int note, int duration, int channel, int volume)");
+    REGISTER_TIC(vm, as_sfx, "void sfx(int id, int note, int duration, int channel, int volume, int speed)");
+    REGISTER_TIC(vm, as_sfx, "void sfx(int id, int note, int duration, int channel, const array<int>@ volumes)");
+    REGISTER_TIC(vm, as_sfx, "void sfx(int id, int note, int duration, int channel, const array<int>@ volumes, int speed)");
+    REGISTER_TIC(vm, as_sfx, "void sfx(int id, const string &in note)");
+    REGISTER_TIC(vm, as_sfx, "void sfx(int id, const string &in note, int duration)");
+    REGISTER_TIC(vm, as_sfx, "void sfx(int id, const string &in note, int duration, int channel)");
+    REGISTER_TIC(vm, as_sfx, "void sfx(int id, const string &in note, int duration, int channel, int volume)");
+    REGISTER_TIC(vm, as_sfx, "void sfx(int id, const string &in note, int duration, int channel, int volume, int speed)");
+    REGISTER_TIC(vm, as_sfx, "void sfx(int id, const string &in note, int duration, int channel, const array<int>@ volumes)");
+    REGISTER_TIC(vm, as_sfx, "void sfx(int id, const string &in note, int duration, int channel, const array<int>@ volumes, int speed)");
     REGISTER_TIC(vm, as_vbank, "int vbank(int bank)");
     REGISTER_TIC(vm, as_vbank, "int vbank()");
     REGISTER_TIC(vm, as_sync, "void sync(uint mask=0, int bank=0, bool tocart=false)");
     REGISTER_TIC(vm, as_reset, "void reset()");
-    REGISTER_TIC(vm, as_key, "bool key(int code=-1)");
-    REGISTER_TIC(vm, as_keyp, "bool keyp(int code=-1, int hold=-1, int period=-1)");
+    REGISTER_TIC(vm, as_key, "bool key()");
+    REGISTER_TIC(vm, as_key, "bool key(int code)");
+    REGISTER_TIC(vm, as_keyp, "bool keyp()");
+    REGISTER_TIC(vm, as_keyp, "bool keyp(int code)");
+    REGISTER_TIC(vm, as_keyp, "bool keyp(int code, int hold, int period)");
     REGISTER_TIC(vm, as_memcpy, "void memcpy(int dest, int source, int size)");
     REGISTER_TIC(vm, as_memset, "void memset(int dest, uint8 value, int size)");
     REGISTER_TIC(vm, as_font, "int font(const ?&in text, int x, int y, int chromakey, int char_width, int char_height, bool fixed=false, int scale=1, bool alt=false)");
