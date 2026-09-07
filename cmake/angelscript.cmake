@@ -32,8 +32,16 @@ message("BUILD_WITH_ANGELSCRIPT: ${BUILD_WITH_ANGELSCRIPT}")
 
 if(BUILD_WITH_ANGELSCRIPT)
 
-    # TODO: platform specific callfunc
     set(ANGELSCRIPT_DIR ${THIRDPARTY_DIR}/angelscript/sdk)
+
+    file(READ ${ANGELSCRIPT_DIR}/angelscript/include/angelscript.h ANGELSCRIPT_H)
+    string(REGEX MATCH "#define ANGELSCRIPT_VERSION_STRING \"([0-9]*).([0-9]*).([0-9]*)" ANGELSCRIPT_VERSION_REGEX ${ANGELSCRIPT_H})
+    set(ANGELSCRIPT_VERSION_MAJOR ${CMAKE_MATCH_1})
+    set(ANGELSCRIPT_VERSION_MINOR ${CMAKE_MATCH_2})
+    set(ANGELSCRIPT_VERSION_PATCH ${CMAKE_MATCH_3})
+
+    set(AS_MAX_PORTABILITY, TRUE)
+
     set(ANGELSCRIPT_SRC
         ${ANGELSCRIPT_DIR}/angelscript/source/as_atomic.cpp
         ${ANGELSCRIPT_DIR}/angelscript/source/as_builder.cpp
@@ -68,10 +76,18 @@ if(BUILD_WITH_ANGELSCRIPT)
         ${ANGELSCRIPT_DIR}/angelscript/source/as_tokenizer.cpp
         ${ANGELSCRIPT_DIR}/angelscript/source/as_typeinfo.cpp
         ${ANGELSCRIPT_DIR}/angelscript/source/as_variablescope.cpp
-#        ${ANGELSCRIPT_DIR}/angelscript/source/angelscript_tic80.cpp
+        ${ANGELSCRIPT_DIR}/add_on/scriptany/scriptany.cpp
+        ${ANGELSCRIPT_DIR}/add_on/scriptarray/scriptarray.cpp
+        ${ANGELSCRIPT_DIR}/add_on/scriptdictionary/scriptdictionary.cpp
+        ${ANGELSCRIPT_DIR}/add_on/scriptgrid/scriptgrid.cpp
+        ${ANGELSCRIPT_DIR}/add_on/scripthandle/scripthandle.cpp
+        ${ANGELSCRIPT_DIR}/add_on/scriptmath/scriptmath.cpp
+        ${ANGELSCRIPT_DIR}/add_on/scriptmath/scriptmathcomplex.cpp
+        ${ANGELSCRIPT_DIR}/add_on/scriptstdstring/scriptstdstring.cpp
+        ${ANGELSCRIPT_DIR}/add_on/scriptstdstring/scriptstdstring_utils.cpp
+        ${ANGELSCRIPT_DIR}/add_on/weakref/weakref.cpp
     )
 
-#    list(APPEND ANGELSCRIPT_SRC ${CMAKE_SOURCE_DIR}/src/api/angelscript_wrapper.cpp)
     list(APPEND ANGELSCRIPT_SRC ${CMAKE_SOURCE_DIR}/src/api/angelscript.cpp)
     list(APPEND ANGELSCRIPT_SRC ${CMAKE_SOURCE_DIR}/src/api/parse_note.c)
 
@@ -93,9 +109,19 @@ if(BUILD_WITH_ANGELSCRIPT)
             ${CMAKE_SOURCE_DIR}/src
     )
 
-    target_include_directories(angelscript PUBLIC ${ANGELSCRIPT_DIR}/angelscript/include)
     target_include_directories(angelscript PRIVATE ${ANGELSCRIPT_DIR}/angelscript/source)
 
-#    target_include_directories(angelscript PUBLIC ${ANGELSCRIPT_DIR}/tic80/include)
+    target_include_directories(angelscript
+            PUBLIC
+            ${ANGELSCRIPT_DIR}/angelscript/include
+            ${ANGELSCRIPT_DIR}/add_on/scriptany
+            ${ANGELSCRIPT_DIR}/add_on/scriptarray
+            ${ANGELSCRIPT_DIR}/add_on/scriptdictionary
+            ${ANGELSCRIPT_DIR}/add_on/scriptgrid
+            ${ANGELSCRIPT_DIR}/add_on/scripthandle
+            ${ANGELSCRIPT_DIR}/add_on/scriptmath
+            ${ANGELSCRIPT_DIR}/add_on/scriptstdstring
+            ${ANGELSCRIPT_DIR}/add_on/weakref
+    )
 
 endif()

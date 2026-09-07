@@ -11,8 +11,32 @@
 #include "tools.h"
 #include "angelscript.h"
 
+#include "scriptany.h"
+#include "scriptarray.h"
+#include "scriptdictionary.h"
+#include "scriptgrid.h"
+#include "scripthandle.h"
+#include "scriptmath.h"
+#include "scriptstdstring.h"
+#include "weakref.h"
+
 #include <assert.h>
-// #include "angelscript_wrapper.h"
+
+#include "scriptmathcomplex.h"
+
+#include <string>
+
+typedef std::string string;
+
+#define REGISTER_TIC(vm, name, decl) \
+    { \
+        int _result = (vm)->engine->RegisterGlobalFunction( \
+            (decl), \
+            asFUNCTION(name), \
+            asCALL_GENERIC \
+        ); \
+        assert(_result >= 0); \
+    }
 
 typedef struct
 {
@@ -39,6 +63,7 @@ static asIScriptModule* asCompileModule(asIScriptEngine* engine, const char* cod
 }
 
 static void asMessageCallback(const asSMessageInfo *msg, void *param)
+// static void asMessageCallback(asIScriptGeneric* gen)
 {
     tic_core* core = static_cast<tic_core*>(param);
 
@@ -53,35 +78,83 @@ static void asMessageCallback(const asSMessageInfo *msg, void *param)
     core->data->error(core->data->data, buffer);
 }
 
-static void as_cls(int color)
+// static void as_cls(uint8 color)
+static void as_cls(asIScriptGeneric* gen)
 {
     asIScriptContext* ctx = asGetActiveContext();
     tic_core* core = static_cast<tic_core*>(ctx->GetUserData());
     tic_mem* mem = (tic_mem*)core;
 
-    core->api.cls(mem, (u8)color);
+    const u8 color = gen->GetArgByte(0);
+    core->api.cls(mem, color);
 }
 
-static bool as_btn(int button)
+// static bool as_btn(int button)
+static void as_btn(asIScriptGeneric* gen)
 {
     asIScriptContext* ctx = asGetActiveContext();
     tic_core* core = static_cast<tic_core*>(ctx->GetUserData());
     tic_mem* mem = (tic_mem*)core;
 
-    return core->api.btn(mem, (s32)button) != 0;
+    const s32 button = (s32)gen->GetArgDWord(0);
+    bool rv = core->api.btn(mem, button) != 0;
+    *(bool*)gen->GetAddressOfReturnLocation() = rv;
 }
 
-static void as_spr(int id, int x, int y, int colorkey, int scale, int flip, int rotate, int w, int h)
+// void spr(int id, int x, int y, int colorkey, int scale, uint8 flip, uint8 rotate, int w, int h)
+static void as_spr(asIScriptGeneric* gen)
 {
     asIScriptContext* ctx = asGetActiveContext();
     tic_core* core = static_cast<tic_core*>(ctx->GetUserData());
     tic_mem* mem = (tic_mem*)core;
+
+    const s32 id = (s32)gen->GetArgDWord(0);
+    const s32 x = (s32)gen->GetArgDWord(1);
+    const s32 y = (s32)gen->GetArgDWord(2);
+    const s32 scale = (s32)gen->GetArgDWord(4);
+    const u8 flip = gen->GetArgByte(5);
+    const u8 rotate = gen->GetArgByte(6);
+    const s32 w = (s32)gen->GetArgDWord(7);
+    const s32 h = (s32)gen->GetArgDWord(8);
 
     u8 colors[TIC_PALETTE_SIZE];
-    colors[0] = colorkey;
     int colors_count = 1;
 
+    if (gen->GetArgTypeId(3) == asTYPEID_INT32)
+    {
+        colors[0] = (u8)gen->GetArgDWord(3);
+    }
+    else
+    {
+        const CScriptArray* colorkeys = static_cast<const CScriptArray*>(gen->GetArgObject(3));
+        for (asUINT i = 0; i < colorkeys->GetSize() && i < TIC_PALETTE_SIZE; i++)
+        {
+            asDWORD color = *(asDWORD*)colorkeys->At(i);
+            colors[i] = (u8)color;
+            colors_count++;
+        }
+        colorkeys->Release();
+    }
+
     core->api.spr(mem, id, x, y, w, h, colors, colors_count, scale, tic_flip(flip), tic_rotate(rotate));
+}
+
+// void print(const string& in text, int x, int y, uint8 color, bool fixed, int scale, bool alt)
+static void as_print(asIScriptGeneric* gen)
+{
+    asIScriptContext* ctx = asGetActiveContext();
+    tic_core* core = static_cast<tic_core*>(ctx->GetUserData());
+    tic_mem* mem = (tic_mem*)core;
+
+    const string* text = static_cast<const string*>(gen->GetArgObject(0));
+    const s32 x = (s32)gen->GetArgDWord(1);
+    const s32 y = (s32)gen->GetArgDWord(2);
+    const u8 color = gen->GetArgByte(3);
+    const bool fixed = *(bool*)gen->GetAddressOfArg(4);
+    const s32 scale = (s32)gen->GetArgDWord(5);
+    const bool alt = *(bool*)gen->GetAddressOfArg(6);
+
+    core->api.print(mem, text->c_str(), x, y, color, fixed, scale, alt);
 }
 
 static void initAPI(tic_core* core)
@@ -92,14 +165,11 @@ static void initAPI(tic_core* core)
     r = vm->engine->SetMessageCallback(asFUNCTION(asMessageCallback), core, asCALL_CDECL);
     assert(r >= 0);
 
-    r = vm->engine->RegisterGlobalFunction("void cls(int)", asFUNCTION(as_cls), asCALL_CDECL);
-    assert(r >= 0);
-
-    r = vm->engine->RegisterGlobalFunction("bool btn(int)", asFUNCTION(as_btn), asCALL_CDECL);
-    assert(r >= 0);
-
-    r = vm->engine->RegisterGlobalFunction("void spr(int, int, int, int, int, int, int, int, int)", asFUNCTION(as_spr), asCALL_CDECL);
-    assert(r >= 0);
+    REGISTER_TIC(vm, as_cls, "void cls(uint8)");
+    REGISTER_TIC(vm, as_btn, "bool btn(int)");
+    REGISTER_TIC(vm, as_spr, "void spr(int id, int x, int y, int colorkey=-1, int scale=1, uint8 flip=0, uint8 rotate=0, int w=1, int h=1)");
+    REGISTER_TIC(vm, as_spr, "void spr(int id, int x, int y, const array<int>@ colorkey, int scale=1, uint8 flip=0, uint8 rotate=0, int w=1, int h=1)");
+    REGISTER_TIC(vm, as_print, "void print(const string& in, int, int, uint8, bool, int, bool)");
 }
 
 static void closeAngelScript(tic_mem* tic)
@@ -123,34 +193,46 @@ static bool initAngelScript(tic_mem* tic, const char* code)
     closeAngelScript(tic);
 
     ANGELSCRIPTVM* vm = new ANGELSCRIPTVM{};
-    vm->engine = asCreateScriptEngine();
     core->currentVM = vm;
 
+    vm->engine = asCreateScriptEngine();
+    if (!vm->engine)
+    {
+        core->data->error(core->data->data, "Couldn't create engine.");
+        return false;
+    }
+
+    // RegisterScriptAny(vm->engine);
+    RegisterScriptArray(vm->engine, true);
+    // RegisterScriptDictionary(vm->engine);
+    // RegisterScriptGrid(vm->engine);
+    // RegisterScriptHandle(vm->engine);
+    RegisterScriptMath(vm->engine);
+    // RegisterScriptMathComplex(vm->engine);
+    RegisterStdString(vm->engine);
+    // RegisterStdStringUtils(vm->engine);
+    // RegisterScriptWeakRef(vm->engine);
+
     vm->context = vm->engine->CreateContext();
+    if (!vm->context)
+    {
+        core->data->error(core->data->data, "Couldn't create context.");
+        return false;
+    }
+
     vm->context->SetUserData(core);
 
     initAPI(core);
 
     vm->module = asCompileModule(vm->engine, code);
-
     if (!vm->module)
     {
-        if (core->data)
-        {
-            core->data->error(core->data->data, "Module failed compilation.");
-        }
-
+        core->data->error(core->data->data, "Module failed compilation.");
         return false;
     }
 
     vm->bootFunction = vm->module->GetFunctionByDecl("void BOOT()");
     vm->tickFunction = vm->module->GetFunctionByDecl("void TIC()");
-
-    // if (!module)
-    // {
-    //     core->data->error(core->data->data, "error building module");
-    //     return false;
-    // }
 
     return true;
 }
@@ -164,7 +246,9 @@ static void callAngelScriptTick(tic_mem* tic)
     {
         if (vm->tickFunction)
         {
-            vm->context->Prepare(vm->tickFunction);
+            int r = vm->context->Prepare(vm->tickFunction);
+            assert(r >= 0);
+
             vm->context->Execute();
         }
     }
@@ -179,7 +263,9 @@ static void callAngelScriptBoot(tic_mem* tic)
     {
         if (vm->bootFunction)
         {
-            vm->context->Prepare(vm->bootFunction);
+            int r = vm->context->Prepare(vm->bootFunction);
+            assert(r >= 0);
+
             vm->context->Execute();
         }
     }
