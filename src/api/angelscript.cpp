@@ -1032,6 +1032,17 @@ static void as_ffts(asIScriptGeneric* gen)
     // TODO: remove?
 }
 
+static void as_rnd(asIScriptGeneric* gen)
+{
+    gen->SetReturnDWord((asDWORD)rand());
+}
+
+static void as_rndmax(asIScriptGeneric* gen)
+{
+    int max = (int)gen->GetArgDWord(0);
+    gen->SetReturnDWord((asDWORD)(rand() % max));
+}
+
 static void initAPI(ANGELSCRIPTVM* vm)
 {
     vm->engine->RegisterFuncdef("uint8 RemapCallback(uint8 intile, int x, int y)");
@@ -1047,6 +1058,11 @@ static void initAPI(ANGELSCRIPTVM* vm)
     vm->engine->RegisterTypedef("s32", "int32");
     vm->engine->RegisterTypedef("s64", "int64");
 
+    // apparently angelscript doesn't have random so we'll just put the default math one in for now
+    REGISTER_TIC(vm, as_rnd, "int rnd()");
+    REGISTER_TIC(vm, as_rndmax, "int rnd(int max)");
+
+    // TIC-80
     REGISTER_TIC(vm, as_peek, "uint8 peek(int address, int bits=8)");
     REGISTER_TIC(vm, as_poke, "void poke(int address, uint8 value, int bits=8)");
     REGISTER_TIC(vm, as_peek1, "uint8 peek1(int address)");
