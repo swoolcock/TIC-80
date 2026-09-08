@@ -523,7 +523,7 @@ static void as_spr(asIScriptGeneric* gen)
     const s32 w = (s32)gen->GetArgDWord(7);
     const s32 h = (s32)gen->GetArgDWord(8);
 
-    u8 colors[TIC_PALETTE_SIZE];
+    static u8 colors[TIC_PALETTE_SIZE];
     int colors_count = 0;
 
     if (gen->GetArgTypeId(3) == asTYPEID_INT32)
@@ -567,11 +567,88 @@ static void as_mset(asIScriptGeneric* gen)
     core->api.mset(mem, x, y, tile_id);
 }
 
+typedef struct
+{
+    ANGELSCRIPTVM* vm;
+    asIScriptFunction* remap;
+} RemapData;
+
+static void remapCallback(void* data, s32 x, s32 y, RemapResult* result)
+{
+    RemapData* remap_data = (RemapData*)data;
+    ANGELSCRIPTVM* vm = remap_data->vm;
+    asIScriptContext* ctx = vm->context;
+    asIScriptFunction* remap = remap_data->remap;
+
+    u8 outtile = result->index;
+    tic_flip flip = tic_no_flip;
+    tic_rotate rotate = tic_no_rotate;
+
+    ctx->PushState();
+    ctx->Prepare(remap);
+    ctx->SetArgByte(0, result->index);
+    ctx->SetArgDWord(1, x);
+    ctx->SetArgDWord(2, y);
+    ctx->SetArgAddress(3, &outtile);
+    ctx->SetArgAddress(4, &flip);
+    ctx->SetArgAddress(5, &rotate);
+    ctx->Execute();
+    ctx->PopState();
+
+    result->index = outtile;
+    result->flip = flip;
+    result->rotate = rotate;
+}
+
+// void map(int x=0, int y=0, int w=30, int h=17, int sx=0, int sy=0, int colorkey=-1, int scale=1, REMAP_CALLBACK remap=null)
 static void as_map(asIScriptGeneric* gen)
 {
     GET_TIC_CORE(ctx, core, mem);
 
-    // TODO: map
+    const s32 x = (s32)gen->GetArgDWord(0);
+    const s32 y = (s32)gen->GetArgDWord(1);
+    const s32 w = (s32)gen->GetArgDWord(2);
+    const s32 h = (s32)gen->GetArgDWord(3);
+    const s32 sx = (s32)gen->GetArgDWord(4);
+    const s32 sy = (s32)gen->GetArgDWord(5);
+    s32 scale = 1;
+    asIScriptFunction* remap = nullptr;
+
+    static u8 colors[TIC_PALETTE_SIZE];
+    int colors_count = 0;
+
+    if (gen->GetArgCount() > 6)
+    {
+        if (gen->GetArgTypeId(6) == asTYPEID_INT32)
+        {
+            colors[0] = (u8)gen->GetArgDWord(6);
+            colors_count = 1;
+        }
+        else
+        {
+            const CScriptArray* colorkeys = static_cast<const CScriptArray*>(gen->GetArgObject(6));
+            for (asUINT i = 0; i < colorkeys->GetSize() && i < TIC_PALETTE_SIZE; i++)
+            {
+                colors[i] = (u8)*(asDWORD*)colorkeys->At(i);
+                colors_count++;
+            }
+            colorkeys->Release();
+        }
+
+        scale = (s32)gen->GetArgDWord(7);
+        remap = static_cast<asIScriptFunction*>(gen->GetArgObject(8));
+    }
+
+    if (remap)
+    {
+        RemapData data = {(ANGELSCRIPTVM*)core->currentVM, remap};
+        core->api.map(mem, x, y, w, h, sx, sy, colors, colors_count, scale, remapCallback, &data);
+        remap->Release();
+    }
+    else
+    {
+        core->api.map(mem, x, y, w, h, sx, sy, colors, colors_count, scale, NULL, NULL);
+    }
 }
 
 static void as_music(asIScriptGeneric* gen)
@@ -581,8 +658,8 @@ static void as_music(asIScriptGeneric* gen)
     const s32 track = (s32)gen->GetArgDWord(0);
     const s32 frame = (s32)gen->GetArgDWord(1);
     const s32 row = (s32)gen->GetArgDWord(2);
-    const bool loop = *(bool*)gen->GetAddressOfArg(3);
-    const bool sustain = *(bool*)gen->GetAddressOfArg(4);
+    const bool loop = gen->GetArgByte(3) != 0;
+    const bool sustain = gen->GetArgByte(4) != 0;
     const s32 tempo = (s32)gen->GetArgDWord(5);
     const s32 speed = (s32)gen->GetArgDWord(6);
 
@@ -707,7 +784,7 @@ static void as_sync(asIScriptGeneric* gen)
 
     const u32 mask = (u32)gen->GetArgDWord(0);
     const s32 bank = (u32)gen->GetArgDWord(1);
-    const bool tocart = *(bool*)gen->GetAddressOfArg(2);
+    const bool tocart = gen->GetArgByte(2) != 0;
 
     if (bank < 0 || bank >= TIC_BANKS)
     {
@@ -818,9 +895,9 @@ static void as_font(asIScriptGeneric* gen)
     u8 chromakey = gen->GetArgByte(3);
     const s32 char_width = (s32)gen->GetArgDWord(4);
     const s32 char_height = (s32)gen->GetArgDWord(5);
-    const bool fixed = *(bool*)gen->GetAddressOfArg(6);
+    const bool fixed = gen->GetArgByte(6) != 0;
     const s32 scale = (s32)gen->GetArgDWord(7);
-    const bool alt = *(bool*)gen->GetAddressOfArg(8);
+    const bool alt = gen->GetArgByte(8) != 0;
 
     s32 size = core->api.font(mem, text.c_str(), x, y, &chromakey, 1, char_width, char_height, fixed, scale, alt);
     gen->SetReturnDWord(size);
@@ -834,9 +911,9 @@ static void as_print(asIScriptGeneric* gen)
     const s32 x = (s32)gen->GetArgDWord(1);
     const s32 y = (s32)gen->GetArgDWord(2);
     const u8 color = gen->GetArgByte(3);
-    const bool fixed = *(bool*)gen->GetAddressOfArg(4);
+    const bool fixed = gen->GetArgByte(4) != 0;
     const s32 scale = (s32)gen->GetArgDWord(5);
-    const bool alt = *(bool*)gen->GetAddressOfArg(6);
+    const bool alt = gen->GetArgByte(6) != 0;
 
     s32 width = core->api.print(mem, text.c_str(), x, y, color, fixed, scale, alt);
     gen->SetReturnDWord(width);
@@ -933,7 +1010,7 @@ static void as_fset(asIScriptGeneric* gen)
 
     const s32 index = (s32)gen->GetArgDWord(0);
     const u8 flag = gen->GetArgByte(1);
-    const bool value = *(bool*)gen->GetAddressOfArg(2);
+    const bool value = gen->GetArgByte(2) != 0;
 
     core->api.fset(mem, index, flag, value);
 }
@@ -952,13 +1029,9 @@ static void as_ffts(asIScriptGeneric* gen)
     // TODO: remove?
 }
 
-static void initAPI(tic_core* core)
+static void initAPI(ANGELSCRIPTVM* vm)
 {
-    ANGELSCRIPTVM* vm = static_cast<ANGELSCRIPTVM*>(core->currentVM);
-    int r = 0;
-
-    r = vm->engine->SetMessageCallback(asFUNCTION(asMessageCallback), core, asCALL_CDECL);
-    assert(r >= 0);
+    vm->engine->RegisterFuncdef("void RemapCallback(uint8 intile, int x, int y, uint8 &out outtile, int &out flip, int &out rotate)");
 
     REGISTER_TIC(vm, as_peek, "uint8 peek(int address, int bits=8)");
     REGISTER_TIC(vm, as_poke, "void poke(int address, uint8 value, int bits=8)");
@@ -994,7 +1067,9 @@ static void initAPI(tic_core* core)
     REGISTER_TIC(vm, as_spr, "void spr(int id, int x, int y, const array<int>@ colorkey, int scale=1, uint8 flip=0, uint8 rotate=0, int w=1, int h=1)");
     REGISTER_TIC(vm, as_mget, "uint8 mget(int x, int y)");
     REGISTER_TIC(vm, as_mset, "void mset(int x, int y, uint8 tile_id)");
-    // REGISTER_TIC(vm, as_map, ""); // TODO: map requires remap callback
+    REGISTER_TIC(vm, as_map, "void map(int x=0, int y=0, int w=30, int h=17, int sx=0, int sy=0)");
+    REGISTER_TIC(vm, as_map, "void map(int x, int y, int w, int h, int sx, int sy, int colorkey, int scale=1, RemapCallback@ remap=null)");
+    REGISTER_TIC(vm, as_map, "void map(int x, int y, int w, int h, int sx, int sy, const array<int>@ colorkey, int scale=1, RemapCallback@ remap=null)");
     REGISTER_TIC(vm, as_music, "void music(int track=-1, int frame=-1, int row=-1, bool loop=true, bool sustain=false, int tempo=-1, int speed=-1)");
     REGISTER_TIC(vm, as_sfx, "void sfx(int id)");
     REGISTER_TIC(vm, as_sfx, "void sfx(int id, int note)");
@@ -1088,9 +1163,10 @@ static bool initAngelScript(tic_mem* tic, const char* code)
 
     vm->context->SetUserData(core);
 
+    vm->engine->SetMessageCallback(asFUNCTION(asMessageCallback), core, asCALL_CDECL);
     vm->context->SetExceptionCallback(asFUNCTION(asExceptionCallback), core, asCALL_CDECL);
 
-    initAPI(core);
+    initAPI(vm);
 
     vm->module = asCompileModule(vm->engine, code);
     if (!vm->module)
