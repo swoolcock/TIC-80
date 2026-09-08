@@ -440,7 +440,7 @@ static void as_ttri(asIScriptGeneric* gen)
     if (gen->GetArgCount() == 17)
     {
         for (s32 i = 0; i < COUNT_OF(z); i++)
-            z[i] = gen->GetArgFloat(i + 14);
+            z[i] = gen->GetArgFloat(i + 15);
 
         depth = true;
     }
@@ -580,27 +580,30 @@ static void remapCallback(void* data, s32 x, s32 y, RemapResult* result)
     asIScriptContext* ctx = vm->context;
     asIScriptFunction* remap = remap_data->remap;
 
-    u8 outtile = result->index;
-    tic_flip flip = tic_no_flip;
-    tic_rotate rotate = tic_no_rotate;
-
     ctx->PushState();
     ctx->Prepare(remap);
     ctx->SetArgByte(0, result->index);
     ctx->SetArgDWord(1, x);
     ctx->SetArgDWord(2, y);
-    ctx->SetArgAddress(3, &outtile);
-    ctx->SetArgAddress(4, &flip);
-    ctx->SetArgAddress(5, &rotate);
-    ctx->Execute();
-    ctx->PopState();
 
-    result->index = outtile;
-    result->flip = flip;
-    result->rotate = rotate;
+    u8 outtile = result->index;
+    if (remap->GetParamCount() > 3)
+    {
+        ctx->SetArgAddress(3, &outtile);
+        ctx->SetArgAddress(4, &result->flip);
+        ctx->SetArgAddress(5, &result->rotate);
+    }
+
+    ctx->Execute();
+
+    if (remap->GetParamCount() <= 3)
+        result->index = ctx->GetReturnByte();
+    else
+        result->index = outtile;
+
+    ctx->PopState();
 }
 
-// void map(int x=0, int y=0, int w=30, int h=17, int sx=0, int sy=0, int colorkey=-1, int scale=1, REMAP_CALLBACK remap=null)
 static void as_map(asIScriptGeneric* gen)
 {
     GET_TIC_CORE(ctx, core, mem);
@@ -1031,7 +1034,18 @@ static void as_ffts(asIScriptGeneric* gen)
 
 static void initAPI(ANGELSCRIPTVM* vm)
 {
-    vm->engine->RegisterFuncdef("void RemapCallback(uint8 intile, int x, int y, uint8 &out outtile, int &out flip, int &out rotate)");
+    vm->engine->RegisterFuncdef("uint8 RemapCallback(uint8 intile, int x, int y)");
+    vm->engine->RegisterFuncdef("void RemapCallbackOut(uint8 intile, int x, int y, uint8 &out outtile, int &out flip, int &out rotate)");
+
+    // typedef what TIC-80 defines
+    vm->engine->RegisterTypedef("u8", "uint8");
+    vm->engine->RegisterTypedef("u16", "uint16");
+    vm->engine->RegisterTypedef("u32", "uint32");
+    vm->engine->RegisterTypedef("u64", "uint64");
+    vm->engine->RegisterTypedef("s8", "int8");
+    vm->engine->RegisterTypedef("s16", "int16");
+    vm->engine->RegisterTypedef("s32", "int32");
+    vm->engine->RegisterTypedef("s64", "int64");
 
     REGISTER_TIC(vm, as_peek, "uint8 peek(int address, int bits=8)");
     REGISTER_TIC(vm, as_poke, "void poke(int address, uint8 value, int bits=8)");
@@ -1051,7 +1065,6 @@ static void initAPI(ANGELSCRIPTVM* vm)
     REGISTER_TIC(vm, as_circb, "void circb(int x, int y, int radius, uint8 color)");
     REGISTER_TIC(vm, as_elli, "void elli(int x, int y, int a, int b, uint8 color)");
     REGISTER_TIC(vm, as_ellib, "void ellib(int x, int y, int a, int b, uint8 color)");
-    // REGISTER_TIC(vm, as_paint, "");
     REGISTER_TIC(vm, as_tri, "void tri(float x1, float y1, float x2, float y2, float x3, float y3, uint8 color)");
     REGISTER_TIC(vm, as_trib, "void trib(float x1, float y1, float x2, float y2, float x3, float y3, uint8 color)");
     REGISTER_TIC(vm, as_ttri, "void ttri(float x1, float y1, float x2, float y2, float x3, float y3, float u1, float v1, float u2, float v2, float u3, float v3)");
@@ -1069,7 +1082,9 @@ static void initAPI(ANGELSCRIPTVM* vm)
     REGISTER_TIC(vm, as_mset, "void mset(int x, int y, uint8 tile_id)");
     REGISTER_TIC(vm, as_map, "void map(int x=0, int y=0, int w=30, int h=17, int sx=0, int sy=0)");
     REGISTER_TIC(vm, as_map, "void map(int x, int y, int w, int h, int sx, int sy, int colorkey, int scale=1, RemapCallback@ remap=null)");
+    REGISTER_TIC(vm, as_map, "void map(int x, int y, int w, int h, int sx, int sy, int colorkey, int scale=1, RemapCallbackOut@ remap=null)");
     REGISTER_TIC(vm, as_map, "void map(int x, int y, int w, int h, int sx, int sy, const array<int>@ colorkey, int scale=1, RemapCallback@ remap=null)");
+    REGISTER_TIC(vm, as_map, "void map(int x, int y, int w, int h, int sx, int sy, const array<int>@ colorkey, int scale=1, RemapCallbackOut@ remap=null)");
     REGISTER_TIC(vm, as_music, "void music(int track=-1, int frame=-1, int row=-1, bool loop=true, bool sustain=false, int tempo=-1, int speed=-1)");
     REGISTER_TIC(vm, as_sfx, "void sfx(int id)");
     REGISTER_TIC(vm, as_sfx, "void sfx(int id, int note)");
@@ -1108,8 +1123,6 @@ static void initAPI(ANGELSCRIPTVM* vm)
     REGISTER_TIC(vm, as_mouse, "void mouse(int &out x, int &out y, bool &out left=void, bool &out middle=void, bool &out right=void, int &out scrollx=void, int &out scrolly=void)");
     REGISTER_TIC(vm, as_fget, "bool fget(int sprite_id, uint8 flag)");
     REGISTER_TIC(vm, as_fset, "void fset(int sprite_id, uint8 flag, bool value)");
-    // REGISTER_TIC(vm, as_fft, "");
-    // REGISTER_TIC(vm, as_ffts, "");
 }
 
 static void closeAngelScript(tic_mem* tic)
@@ -1259,6 +1272,20 @@ static const char* const AngelScriptKeywords [] =
     "switch","true","try","typedef","uint","uint8","uint16","uint32","uint64","using","void","while","xor",
     "abstract","delete","explicit","external","final","from","function","get","override","property","set","shared",
     "super","this",
+
+    // typedefs
+    "u8", "u16", "u32", "u64", "s8", "s16", "s32", "s64",
+
+    // addon types
+    "any", // scriptany
+    "array", // scriptarray
+    "dictionary", "dictionaryIter", "dictionaryValue", // scriptdictionary
+    // "grid", // scriptgrid
+    "ref", // scripthandle
+    "throw", // scripthelper - throw is a function but it looks nicer as a keyword
+    // "complex", // scriptmathcomplex
+    "string", // scriptstdstring
+    "weakref", "const_weakref", // weakref
 };
 
 static const char* AngelScriptAPIKeywords [] =
@@ -1271,18 +1298,11 @@ static const char* AngelScriptAPIKeywords [] =
     TIC_API_LIST(API_KEYWORD_DEF)
 #undef  API_KEYWORD_DEF
 
-    // addon types and global functions (not doing all the methods!)
-    "any", // scriptany
-    "array", // scriptarray
-    "dictionary", "dictionaryIter", "dictionaryValue", // scriptdictionary
-    // "grid", // scriptgrid
-    "ref", // scripthandle
-    "throw", "getExceptionInfo", // scripthelper
+    // addon global functions (not doing all the methods!)
+    "getExceptionInfo", // scripthelper
     "cos", "sin", "tan", "acos", "asin", "atan", "atan2", "cosh", "sinh", "tanh", "log", "log10", "pow", "sqrt", "ceil", "abs", "floor", "fraction", // scriptmath
-    // "complex", // scriptmathcomplex
-    "string", "scan", "format", "formatInt", "formatUInt", "formatFloat", "parseInt", "parseUInt", "parseFloat", // scriptstdstring
+    "scan", "format", "formatInt", "formatUInt", "formatFloat", "parseInt", "parseUInt", "parseFloat", // scriptstdstring
     "join", // scriptstdstring_utils
-    "weakref", "const_weakref", // weakref
 };
 
 static const u8 DemoRom[] =
