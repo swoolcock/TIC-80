@@ -95,3 +95,6 @@
 [submodule "vendor/miniscript2"]
 	path = vendor/miniscript2
 	url = https://github.com/JoeStrout/miniscript2
+[submodule "vendor/gravity"]
+	path = vendor/gravity
+	url = https://github.com/marcobambini/gravity.git
