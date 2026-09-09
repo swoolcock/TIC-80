@@ -98,15 +98,37 @@ static float grav_get_float_default(gravity_value_t value, float default_value)
     return default_value;
 }
 
-#define TIC_GRAVITY_DEF_CONVERT_OVERLOAD(TYPE, DEFAULT) \
-    static TYPE grav_get_##TYPE(gravity_value_t value) { \
-        return grav_get_##TYPE##_default(value, DEFAULT); \
+static gravity_string_t *grav_get_string_default(gravity_vm *vm, gravity_value_t value, const char *default_value)
+{
+    if (VALUE_ISA_STRING(value)) return VALUE_AS_STRING(value);
+
+    if (VALUE_ISA_BOOL(value))
+    {
+        const char *str = VALUE_AS_BOOL(value) ? "true" : "false";
+        return VALUE_AS_STRING(gravity_string_to_value(vm, str, strlen(str)));
     }
 
-TIC_GRAVITY_DEF_CONVERT_OVERLOAD(int, 0);
-TIC_GRAVITY_DEF_CONVERT_OVERLOAD(float, 0.0f);
+    char buf[256];
 
-#undef TIC_GRAVITY_DEF_CONVERT_OVERLOAD
+    if (VALUE_ISA_INT(value))
+    {
+        snprintf(buf, sizeof(buf), "%d", (int)VALUE_AS_INT(value));
+        return VALUE_AS_STRING(gravity_string_to_value(vm, buf, strlen(buf)));
+    }
+
+    if (VALUE_ISA_FLOAT(value))
+    {
+        snprintf(buf, sizeof(buf), "%g", VALUE_AS_FLOAT(value));
+        return VALUE_AS_STRING(gravity_string_to_value(vm, buf, strlen(buf)));
+    }
+
+    if (default_value == NULL) return VALUE_AS_STRING(gravity_string_to_value(vm, "", 0));
+    return VALUE_AS_STRING(gravity_string_to_value(vm, default_value, strlen(default_value)));
+}
+
+static int grav_get_int(gravity_value_t value) { return grav_get_int_default(value, 0); }
+static float grav_get_float(gravity_value_t value) { return grav_get_float_default(value, 0.0f); }
+static gravity_string_t *grav_get_string(gravity_vm *vm, gravity_value_t value) { return grav_get_string_default(vm, value, NULL); }
 
 // MARK: btn
 static bool grav_btn(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex)
@@ -275,16 +297,14 @@ static bool grav_fset(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uin
 {
     TIC_GRAVITY_GET_CORE(vm, tic, core);
 
-    if (nargs == 4)
-    {
-        s32 index = grav_get_int(args[1]);
-        u8 flag = grav_get_int(args[2]);
-        bool value = grav_get_int(args[3]) != 0;
-        core->api.fset(tic, index, flag, value);
-        RETURN_NOVALUE();
-    }
+    if (nargs != 4) RETURN_ERROR("invalid parameters, fset sprite_id flag bool");
 
-    RETURN_ERROR("invalid parameters, fset sprite_id flag bool");
+    s32 index = grav_get_int(args[1]);
+    u8 flag = grav_get_int(args[2]);
+    bool value = grav_get_int(args[3]) != 0;
+    core->api.fset(tic, index, flag, value);
+
+    RETURN_NOVALUE();
 }
 
 // MARK: key
@@ -524,7 +544,20 @@ static bool grav_pix(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint
 }
 
 // MARK: pmem
-static bool grav_pmem(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex){}
+static bool grav_pmem(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex)
+{
+    TIC_GRAVITY_GET_CORE(vm, tic, core);
+
+    if (nargs < 2 || nargs > 3) RETURN_ERROR("invalid parameters, pmem index [val32]");
+
+    s32 index = grav_get_int(args[1]);
+    if (index >= TIC_PERSISTENT_SIZE) RETURN_ERROR("invalid persistent tic index");
+
+    u32 current = core->api.pmem(tic, index, 0, false);
+    if (nargs == 3) core->api.pmem(tic, index, (u32)grav_get_int(args[2]), true);
+
+    RETURN_VALUE(VALUE_FROM_INT(current), rindex);
+}
 
 // MARK: poke
 static bool grav_poke(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex)
@@ -588,7 +621,21 @@ static bool grav_poke4(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, ui
 // MARK: print
 static bool grav_print(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex)
 {
-    RETURN_NOVALUE();
+    TIC_GRAVITY_GET_CORE(vm, tic, core);
+
+    if (nargs > 8) RETURN_ERROR("invalid parameters, print text [x=0 [y=0 [color=15 [fixed=false [scale=1 [smallfont=false]]]]]]");
+
+    gravity_string_t *text  = grav_get_string(vm, args[1]);
+    s32 x                   = nargs >= 3 ? grav_get_int(args[2]) : 0;
+    s32 y                   = nargs >= 4 ? grav_get_int(args[3]) : 0;
+    u8 color                = nargs >= 5 ? grav_get_int(args[4]) : 15;
+    bool fixed              = nargs >= 6 ? grav_get_int(args[5]) != 0 : false;
+    s32 scale               = nargs >= 7 ? grav_get_int(args[6]) : 1;
+    bool smallfont          = nargs >= 8 ? grav_get_int(args[7]) != 0 : false;
+
+    s32 width = core->api.print(tic, text->s, x, y, color, fixed, scale, smallfont);
+
+    RETURN_VALUE(VALUE_FROM_INT(width), rindex);
 }
 
 // MARK: rect
