@@ -113,18 +113,13 @@ static bool grav_btn(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint
 {
     TIC_GRAVITY_GET_CORE(vm, tic, core);
 
-    if (nargs == 1)
-    {
-        RETURN_VALUE(VALUE_FROM_INT(core->api.btn(tic, -1)), rindex);
-    }
+    if (nargs > 2) RETURN_ERROR("invalid parameters, btn [id]");
 
-    if (nargs == 2)
-    {
-        s32 index = grav_get_int(args[1]) & 0x1f;
-        RETURN_VALUE(VALUE_FROM_BOOL(core->api.btn(tic, index)), rindex);
-    }
+    s32 index = nargs == 2 ? grav_get_int(args[1]) & 0x1f : -1;
+    u32 result = core->api.btn(tic, index);
 
-    RETURN_ERROR("invalid parameters, btn [ id ]");
+    gravity_value_t value = nargs == 1 ? VALUE_FROM_INT(result) : VALUE_FROM_BOOL(result);
+    RETURN_VALUE(value, rindex);
 }
 
 // MARK: btnp
@@ -132,26 +127,15 @@ static bool grav_btnp(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uin
 {
     TIC_GRAVITY_GET_CORE(vm, tic, core);
 
-    if (nargs == 1)
-    {
-        RETURN_VALUE(VALUE_FROM_INT(core->api.btnp(tic, -1, -1, -1)), rindex);
-    }
+    if (nargs > 4) RETURN_ERROR("invalid parameters, btnp [id [hold [period]]]");
 
-    if (nargs == 2)
-    {
-        s32 index = grav_get_int(args[1]) & 0x1f;
-        RETURN_VALUE(VALUE_FROM_BOOL(core->api.btnp(tic, index, -1, -1)), rindex);
-    }
+    s32 index = nargs > 1 ? grav_get_int(args[1]) & 0x1f : -1;
+    s32 hold = nargs > 2 ? grav_get_int(args[2]) : -1;
+    s32 period = nargs > 3 ? grav_get_int(args[3]) : -1;
+    u32 result = core->api.btnp(tic, index, hold, period);
 
-    if (nargs == 4)
-    {
-        s32 index = grav_get_int(args[1]) & 0x1f;
-        s32 hold = grav_get_int(args[2]);
-        s32 period = grav_get_int(args[3]);
-        RETURN_VALUE(VALUE_FROM_BOOL(core->api.btnp(tic, index, hold, period)), rindex);
-    }
-
-    RETURN_ERROR("invalid parameters, btnp [ id [ hold period ] ]");
+    gravity_value_t value = nargs == 1 ? VALUE_FROM_INT(result) : VALUE_FROM_BOOL(result);
+    RETURN_VALUE(value, rindex);
 }
 
 // MARK: circ
@@ -159,17 +143,15 @@ static bool grav_circ(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uin
 {
     TIC_GRAVITY_GET_CORE(vm, tic, core);
 
-    if (nargs == 5)
-    {
-        s32 x = grav_get_int(args[1]);
-        s32 y = grav_get_int(args[2]);
-        s32 radius = grav_get_int(args[3]);
-        u8 color = grav_get_int(args[4]);
-        core->api.circ(tic, x, y, radius, color);
-        RETURN_NOVALUE();
-    }
+    if (nargs > 5) RETURN_ERROR("invalid parameters, circ x y radius color");
 
-    RETURN_ERROR("invalid parameters, circ x y radius color");
+    s32 x = grav_get_int(args[1]);
+    s32 y = grav_get_int(args[2]);
+    s32 radius = grav_get_int(args[3]);
+    u8 color = grav_get_int(args[4]);
+    core->api.circ(tic, x, y, radius, color);
+
+    RETURN_NOVALUE();
 }
 
 // MARK: circb
@@ -177,17 +159,15 @@ static bool grav_circb(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, ui
 {
     TIC_GRAVITY_GET_CORE(vm, tic, core);
 
-    if (nargs == 5)
-    {
-        s32 x = grav_get_int(args[1]);
-        s32 y = grav_get_int(args[2]);
-        s32 radius = grav_get_int(args[3]);
-        u8 color = grav_get_int(args[4]);
-        core->api.circb(tic, x, y, radius, color);
-        RETURN_NOVALUE();
-    }
+    if (nargs > 5) RETURN_ERROR("invalid parameters, circb x y radius color");
 
-    RETURN_ERROR("invalid parameters, circb x y radius color");
+    s32 x = grav_get_int(args[1]);
+    s32 y = grav_get_int(args[2]);
+    s32 radius = grav_get_int(args[3]);
+    u8 color = grav_get_int(args[4]);
+    core->api.circb(tic, x, y, radius, color);
+
+    RETURN_NOVALUE();
 }
 
 // MARK: clip
@@ -211,7 +191,7 @@ static bool grav_clip(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uin
         RETURN_NOVALUE();
     }
 
-    RETURN_ERROR("invalid parameters, clip [ x y width height ]");
+    RETURN_ERROR("invalid parameters, clip [x y width height]");
 }
 
 // MARK: cls
@@ -219,9 +199,9 @@ static bool grav_cls(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint
 {
     TIC_GRAVITY_GET_CORE(vm, tic, core);
 
-    if (nargs > 2) RETURN_ERROR("invalid parameters, cls [ color=0 ]");
+    if (nargs > 2) RETURN_ERROR("invalid parameters, cls [color=0]");
 
-    u8 cls_color = (u8)grav_get_int(args[1]);
+    u8 cls_color = nargs > 1 ? (u8)grav_get_int(args[1]) : 0;
     core->api.cls(tic, cls_color);
 
     RETURN_NOVALUE();
@@ -232,18 +212,16 @@ static bool grav_elli(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uin
 {
     TIC_GRAVITY_GET_CORE(vm, tic, core);
 
-    if (nargs == 5)
-    {
-        s32 x = grav_get_int(args[1]);
-        s32 y = grav_get_int(args[2]);
-        s32 a = grav_get_int(args[3]);
-        s32 b = grav_get_int(args[4]);
-        u8 color = grav_get_int(args[5]);
-        core->api.elli(tic, x, y, a, b, color);
-        RETURN_NOVALUE();
-    }
+    if (nargs != 5) RETURN_ERROR("invalid parameters, elli x y a b color");
 
-    RETURN_ERROR("invalid parameters, elli x y a b color");
+    s32 x    = grav_get_int(args[1]);
+    s32 y    = grav_get_int(args[2]);
+    s32 a    = grav_get_int(args[3]);
+    s32 b    = grav_get_int(args[4]);
+    u8 color = grav_get_int(args[5]);
+    core->api.elli(tic, x, y, a, b, color);
+
+    RETURN_NOVALUE();
 }
 
 // MARK: ellib
@@ -251,18 +229,16 @@ static bool grav_ellib(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, ui
 {
     TIC_GRAVITY_GET_CORE(vm, tic, core);
 
-    if (nargs == 5)
-    {
-        s32 x = grav_get_int(args[1]);
-        s32 y = grav_get_int(args[2]);
-        s32 a = grav_get_int(args[3]);
-        s32 b = grav_get_int(args[4]);
-        u8 color = grav_get_int(args[5]);
-        core->api.ellib(tic, x, y, a, b, color);
-        RETURN_NOVALUE();
-    }
+    if (nargs != 5) RETURN_ERROR("invalid parameters, ellib x y a b color");
 
-    RETURN_ERROR("invalid parameters, ellib x y a b color");
+    s32 x    = grav_get_int(args[1]);
+    s32 y    = grav_get_int(args[2]);
+    s32 a    = grav_get_int(args[3]);
+    s32 b    = grav_get_int(args[4]);
+    u8 color = grav_get_int(args[5]);
+    core->api.ellib(tic, x, y, a, b, color);
+
+    RETURN_NOVALUE();
 }
 
 // MARK: exit
@@ -280,18 +256,19 @@ static bool grav_fget(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uin
 {
     TIC_GRAVITY_GET_CORE(vm, tic, core);
 
-    if (nargs == 3)
-    {
-        s32 index = grav_get_int(args[1]);
-        u8 flag = grav_get_int(args[2]);
-        RETURN_VALUE(VALUE_FROM_BOOL(core->api.fget(tic, index, flag)), rindex);
-    }
+    if (nargs != 3) RETURN_ERROR("invalid parameters, fget sprite_id flag");
 
-    RETURN_ERROR("invalid parameters, fget sprite_id flag");
+    s32 index = grav_get_int(args[1]);
+    u8 flag   = grav_get_int(args[2]);
+
+    RETURN_VALUE(VALUE_FROM_BOOL(core->api.fget(tic, index, flag)), rindex);
 }
 
 // MARK: font
-static bool grav_font(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex){}
+static bool grav_font(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex)
+{
+    RETURN_NOVALUE();
+}
 
 // MARK: fset
 static bool grav_fset(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex)
@@ -315,19 +292,12 @@ static bool grav_key(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint
 {
     TIC_GRAVITY_GET_CORE(vm, tic, core);
 
-    if (nargs == 1)
-    {
-        RETURN_VALUE(VALUE_FROM_BOOL(core->api.key(tic, tic_key_unknown)), rindex);
-    }
+    if (nargs > 2) RETURN_ERROR("invalid parameters, key [code]");
 
-    if (nargs == 2)
-    {
-        tic_key key = grav_get_int(args[1]);
-        if (key >= tic_keys_count) RETURN_ERROR("unknown keyboard code");
-        RETURN_VALUE(VALUE_FROM_BOOL(core->api.key(tic, key)), rindex);
-    }
+    tic_key key = nargs == 2 ? grav_get_int(args[1]) : tic_key_unknown;
+    if (key >= tic_keys_count) RETURN_ERROR("unknown keyboard code");
 
-    RETURN_ERROR("invalid parameters, key [ code ]");
+    RETURN_VALUE(VALUE_FROM_BOOL(core->api.key(tic, key)), rindex);
 }
 
 // MARK: keyp
@@ -335,28 +305,15 @@ static bool grav_keyp(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uin
 {
     TIC_GRAVITY_GET_CORE(vm, tic, core);
 
-    if (nargs == 1)
-    {
-        RETURN_VALUE(VALUE_FROM_BOOL(core->api.keyp(tic, tic_key_unknown, -1, -1)), rindex);
-    }
+    if (nargs > 4) RETURN_ERROR("invalid parameters, keyp [code [hold [period]]]");
 
-    tic_key key = grav_get_int(args[1]);
-
+    tic_key key = nargs > 1 ? grav_get_int(args[1]) : tic_key_unknown;
     if (key >= tic_keys_count) RETURN_ERROR("unknown keyboard code");
 
-    if (nargs == 2)
-    {
-        RETURN_VALUE(VALUE_FROM_BOOL(core->api.keyp(tic, key, -1, -1)), rindex);
-    }
+    s32 hold   = nargs > 2 ? grav_get_int(args[2]) : -1;
+    s32 period = nargs > 3 ? grav_get_int(args[3]) : -1;
 
-    if (nargs == 4)
-    {
-        s32 hold = grav_get_int(args[2]);
-        s32 period = grav_get_int(args[3]);
-        RETURN_VALUE(VALUE_FROM_BOOL(core->api.keyp(tic, key, hold, period)), rindex);
-    }
-
-    RETURN_ERROR("invalid parameters, keyp [ code [ hold period ] ]");
+    RETURN_VALUE(VALUE_FROM_BOOL(core->api.keyp(tic, key, hold, period)), rindex);
 }
 
 // MARK: line
@@ -364,38 +321,37 @@ static bool grav_line(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uin
 {
     TIC_GRAVITY_GET_CORE(vm, tic, core);
 
-    if (nargs == 5)
-    {
-        float x0 = grav_get_float(args[1]);
-        float y0 = grav_get_float(args[2]);
-        float x1 = grav_get_float(args[3]);
-        float y1 = grav_get_float(args[4]);
-        u8 color = grav_get_int(args[5]);
-        core->api.line(tic, x0, y0, x1, y1, color);
-        RETURN_NOVALUE();
-    }
+    if (nargs != 5) RETURN_ERROR("invalid parameters, line x0 y0 x1 y1 color");
 
-    RETURN_ERROR("invalid parameters, line x0 y0 x1 y1 color");
+    float x0 = grav_get_float(args[1]);
+    float y0 = grav_get_float(args[2]);
+    float x1 = grav_get_float(args[3]);
+    float y1 = grav_get_float(args[4]);
+    u8 color = grav_get_int(args[5]);
+    core->api.line(tic, x0, y0, x1, y1, color);
+
+    RETURN_NOVALUE();
 }
 
 // MARK: map
-static bool grav_map(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex){}
+static bool grav_map(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex)
+{
+    RETURN_NOVALUE();
+}
 
 // MARK: memcpy
 static bool grav_memcpy(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex)
 {
     TIC_GRAVITY_GET_CORE(vm, tic, core);
 
-    if (nargs == 4)
-    {
-        s32 dest = grav_get_int(args[1]);
-        s32 src = grav_get_int(args[2]);
-        s32 size = grav_get_int(args[3]);
-        core->api.memcpy(tic, dest, src, size);
-        RETURN_NOVALUE();
-    }
+    if (nargs != 4) RETURN_ERROR("invalid parameters, memcpy to from length");
 
-    RETURN_ERROR("invalid parameters, memcpy to from length");
+    s32 dest = grav_get_int(args[1]);
+    s32 src  = grav_get_int(args[2]);
+    s32 size = grav_get_int(args[3]);
+    core->api.memcpy(tic, dest, src, size);
+
+    RETURN_NOVALUE();
 }
 
 // MARK: memset
@@ -403,16 +359,14 @@ static bool grav_memset(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, u
 {
     TIC_GRAVITY_GET_CORE(vm, tic, core);
 
-    if (nargs == 4)
-    {
-        s32 dest = grav_get_int(args[1]);
-        u8 value = grav_get_int(args[2]);
-        s32 size = grav_get_int(args[3]);
-        core->api.memset(tic, dest, value, size);
-        RETURN_NOVALUE();
-    }
+    if (nargs != 4) RETURN_ERROR("invalid parameters, memset addr value length");
 
-    RETURN_ERROR("invalid parameters, memset addr value length");
+    s32 dest = grav_get_int(args[1]);
+    u8 value = grav_get_int(args[2]);
+    s32 size = grav_get_int(args[3]);
+    core->api.memset(tic, dest, value, size);
+
+    RETURN_NOVALUE();
 }
 
 // MARK: mget
@@ -420,14 +374,12 @@ static bool grav_mget(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uin
 {
     TIC_GRAVITY_GET_CORE(vm, tic, core);
 
-    if (nargs == 3)
-    {
-        s32 x = grav_get_int(args[1]);
-        s32 y = grav_get_int(args[2]);
-        RETURN_VALUE(VALUE_FROM_INT(core->api.mget(tic, x, y)), rindex);
-    }
+    if (nargs != 3) RETURN_ERROR("invalid parameters, mget x y");
 
-    RETURN_ERROR("invalid parameters, mget x y");
+    s32 x = grav_get_int(args[1]);
+    s32 y = grav_get_int(args[2]);
+
+    RETURN_VALUE(VALUE_FROM_INT(core->api.mget(tic, x, y)), rindex);
 }
 
 // MARK: mouse
@@ -436,9 +388,7 @@ static bool grav_mouse(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, ui
     TIC_GRAVITY_GET_CORE(vm, tic, core);
 
     if (nargs > 2 || nargs == 2 && !VALUE_ISA_NULL(args[1]) && !VALUE_ISA_LIST(args[1]))
-    {
         RETURN_ERROR("invalid parameters, mouse [array]");
-    }
 
     const int out_value_count = 7;
 
@@ -458,7 +408,7 @@ static bool grav_mouse(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, ui
     list->array.p[5] = VALUE_FROM_INT(mouse->scrollx);
     list->array.p[6] = VALUE_FROM_INT(mouse->scrolly);
 
-    RETURN_VALUE(VALUE_FROM_OBJECT(list),rindex);
+    RETURN_VALUE(VALUE_FROM_OBJECT(list), rindex);
 }
 
 // MARK: mset
@@ -466,30 +416,56 @@ static bool grav_mset(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uin
 {
     TIC_GRAVITY_GET_CORE(vm, tic, core);
 
-    if (nargs == 4)
-    {
-        s32 x = grav_get_int(args[1]);
-        s32 y = grav_get_int(args[2]);
-        u8 val = grav_get_int(args[3]);
-        core->api.mset(tic, x, y, val);
-        RETURN_NOVALUE();
-    }
+    if (nargs != 4) RETURN_ERROR("invalid parameters, mset x y tile_id");
 
-    RETURN_ERROR("invalid parameters, mset x y tile_id");
+    s32 x   = grav_get_int(args[1]);
+    s32 y   = grav_get_int(args[2]);
+    u8 val  = grav_get_int(args[3]);
+    core->api.mset(tic, x, y, val);
+
+    RETURN_NOVALUE();
 }
 
 // MARK: music
-static bool grav_music(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex){}
+static bool grav_music(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex)
+{
+    TIC_GRAVITY_GET_CORE(vm, tic, core);
+
+    if (nargs > 8) RETURN_ERROR("invalid parameters, music [track [frame [row [loop=true [sustain=false [tempo [speed]]]]]]]");
+
+    if (nargs == 1)
+    {
+        core->api.music(tic, -1, 0, 0, false, false, -1, -1);
+        RETURN_NOVALUE();
+    }
+
+    s32 track = grav_get_int(args[1]);
+
+    if (track > MUSIC_TRACKS - 1) RETURN_ERROR("invalid music track index");
+
+    core->api.music(tic, -1, 0, 0, false, false, -1, -1);
+
+    s32 frame       = nargs >= 3 ? grav_get_int(args[2]) : -1;
+    s32 row         = nargs >= 4 ? grav_get_int(args[3]) : -1;
+    bool loop       = nargs >= 5 ? grav_get_int(args[4]) != 0 : true;
+    bool sustain    = nargs >= 6 ? grav_get_int(args[5]) != 0 : false;
+    s32 tempo       = nargs >= 7 ? grav_get_int(args[6]) : -1;
+    s32 speed       = nargs >= 8 ? grav_get_int(args[7]) : -1;
+
+    core->api.music(tic, track, frame, row, loop, sustain, tempo, speed);
+
+    RETURN_NOVALUE();
+}
 
 // MARK: peek
 static bool grav_peek(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex)
 {
     TIC_GRAVITY_GET_CORE(vm, tic, core);
 
-    if (nargs < 2 || nargs > 3) RETURN_ERROR("invalid parameters, peek addr [ bits=8 ]");
+    if (nargs < 2 || nargs > 3) RETURN_ERROR("invalid parameters, peek addr [bits=8]");
 
     s32 address = grav_get_int(args[1]);
-    s32 bits = nargs == 3 ? grav_get_int_default(args[2], BITS_IN_BYTE) : BITS_IN_BYTE;
+    s32 bits    = nargs == 3 ? grav_get_int_default(args[2], BITS_IN_BYTE) : BITS_IN_BYTE;
 
     RETURN_VALUE(VALUE_FROM_INT(core->api.peek(tic, address, bits)), rindex);
 }
@@ -499,13 +475,11 @@ static bool grav_peek1(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, ui
 {
     TIC_GRAVITY_GET_CORE(vm, tic, core);
 
-    if (nargs == 2)
-    {
-        s32 address = grav_get_int(args[1]);
-        RETURN_VALUE(VALUE_FROM_INT(core->api.peek1(tic, address)), rindex);
-    }
+    if (nargs != 2) RETURN_ERROR("invalid parameters, peek1 bitaddr");
 
-    RETURN_ERROR("invalid parameters, peek1 bitaddr");
+    s32 address = grav_get_int(args[1]);
+
+    RETURN_VALUE(VALUE_FROM_INT(core->api.peek1(tic, address)), rindex);
 }
 
 // MARK: peek2
@@ -513,13 +487,11 @@ static bool grav_peek2(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, ui
 {
     TIC_GRAVITY_GET_CORE(vm, tic, core);
 
-    if (nargs == 2)
-    {
-        s32 address = grav_get_int(args[1]);
-        RETURN_VALUE(VALUE_FROM_INT(core->api.peek2(tic, address)), rindex);
-    }
+    if (nargs != 2) RETURN_ERROR("invalid parameters, peek2 addr2");
 
-    RETURN_ERROR("invalid parameters, peek2 addr2");
+    s32 address = grav_get_int(args[1]);
+
+    RETURN_VALUE(VALUE_FROM_INT(core->api.peek2(tic, address)), rindex);
 }
 
 // MARK: peek4
@@ -527,13 +499,11 @@ static bool grav_peek4(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, ui
 {
     TIC_GRAVITY_GET_CORE(vm, tic, core);
 
-    if (nargs == 2)
-    {
-        s32 address = grav_get_int(args[1]);
-        RETURN_VALUE(VALUE_FROM_INT(core->api.peek4(tic, address)), rindex);
-    }
+    if (nargs != 2) RETURN_ERROR("invalid parameters, peek4 addr4");
 
-    RETURN_ERROR("invalid parameters, peek4 addr4");
+    s32 address = grav_get_int(args[1]);
+
+    RETURN_VALUE(VALUE_FROM_INT(core->api.peek4(tic, address)), rindex);
 }
 
 // MARK: pix
@@ -541,22 +511,16 @@ static bool grav_pix(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint
 {
     TIC_GRAVITY_GET_CORE(vm, tic, core);
 
-    if (nargs >= 3)
-    {
-        s32 x = grav_get_int(args[1]);
-        s32 y = grav_get_int(args[2]);
+    if (nargs < 3 || nargs > 4) RETURN_ERROR("invalid parameters, pix x y [color]");
 
-        if (nargs == 3)
-        {
-            RETURN_VALUE(VALUE_FROM_INT(core->api.pix(tic, x, y, 0, true)), rindex);
-        }
+    s32 x       = grav_get_int(args[1]);
+    s32 y       = grav_get_int(args[2]);
+    u8 color    = nargs == 4 ? grav_get_int(args[3]) : 0;
+    u8 result   = core->api.pix(tic, x, y, color, nargs == 3);
 
-        u8 color = grav_get_int(args[3]);
-        core->api.pix(tic, x, y, color, false);
-        RETURN_NOVALUE();
-    }
+    if (nargs == 3) RETURN_VALUE(VALUE_FROM_INT(result), rindex);
 
-    RETURN_ERROR("invalid parameters, pix x y [ color ]");
+    RETURN_NOVALUE();
 }
 
 // MARK: pmem
@@ -567,13 +531,15 @@ static bool grav_poke(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uin
 {
     TIC_GRAVITY_GET_CORE(vm, tic, core);
 
-    if (nargs < 3 || nargs > 4) RETURN_ERROR("invalid parameters, poke addr val [ bits=8 ]");
+    if (nargs < 3 || nargs > 4) RETURN_ERROR("invalid parameters, poke addr val [bits=8]");
 
     s32 address = grav_get_int(args[1]);
-    u8 value = grav_get_int(args[2]);
-    s32 bits = nargs == 4 ? grav_get_int_default(args[3], BITS_IN_BYTE) : BITS_IN_BYTE;
+    u8 value    = grav_get_int(args[2]);
+    s32 bits    = nargs == 4 ? grav_get_int_default(args[3], BITS_IN_BYTE) : BITS_IN_BYTE;
 
     core->api.poke(tic, address, value, bits);
+
+    RETURN_NOVALUE();
 }
 
 // MARK: poke1
@@ -581,15 +547,14 @@ static bool grav_poke1(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, ui
 {
     TIC_GRAVITY_GET_CORE(vm, tic, core);
 
-    if (nargs == 3)
-    {
-        s32 address = grav_get_int(args[1]);
-        u8 value = grav_get_int(args[2]);
-        core->api.poke1(tic, address, value);
-        RETURN_NOVALUE();
-    }
+    if (nargs != 3) RETURN_ERROR("invalid parameters, poke1 bitaddr bitval");
 
-    RETURN_ERROR("invalid parameters, poke1 bitaddr bitval");
+    s32 address = grav_get_int(args[1]);
+    u8 value    = grav_get_int(args[2]);
+
+    core->api.poke1(tic, address, value);
+
+    RETURN_NOVALUE();
 }
 
 // MARK: poke2
@@ -597,15 +562,13 @@ static bool grav_poke2(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, ui
 {
     TIC_GRAVITY_GET_CORE(vm, tic, core);
 
-    if (nargs == 3)
-    {
-        s32 address = grav_get_int(args[1]);
-        u8 value = grav_get_int(args[2]);
-        core->api.poke2(tic, address, value);
-        RETURN_NOVALUE();
-    }
+    if (nargs != 3) RETURN_ERROR("invalid parameters, poke2 addr2 val2");
 
-    RETURN_ERROR("invalid parameters, poke2 addr2 val2");
+    s32 address = grav_get_int(args[1]);
+    u8 value    = grav_get_int(args[2]);
+    core->api.poke2(tic, address, value);
+
+    RETURN_NOVALUE();
 }
 
 // MARK: poke4
@@ -613,37 +576,36 @@ static bool grav_poke4(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, ui
 {
     TIC_GRAVITY_GET_CORE(vm, tic, core);
 
-    if (nargs == 3)
-    {
-        s32 address = grav_get_int(args[1]);
-        u8 value = grav_get_int(args[2]);
-        core->api.poke4(tic, address, value);
-        RETURN_NOVALUE();
-    }
+    if (nargs != 3) RETURN_ERROR("invalid parameters, poke4 addr4 val4");
 
-    RETURN_ERROR("invalid parameters, poke4 addr4 val4");
+    s32 address = grav_get_int(args[1]);
+    u8 value    = grav_get_int(args[2]);
+    core->api.poke4(tic, address, value);
+
+    RETURN_NOVALUE();
 }
 
 // MARK: print
-static bool grav_print(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex){}
+static bool grav_print(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex)
+{
+    RETURN_NOVALUE();
+}
 
 // MARK: rect
 static bool grav_rect(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex)
 {
     TIC_GRAVITY_GET_CORE(vm, tic, core);
 
-    if (nargs == 5)
-    {
-        s32 x = grav_get_int(args[1]);
-        s32 y = grav_get_int(args[2]);
-        s32 w = grav_get_int(args[3]);
-        s32 h = grav_get_int(args[4]);
-        u8 color = grav_get_int(args[5]);
-        core->api.rect(tic, x, y, w, h, color);
-        RETURN_NOVALUE();
-    }
+    if (nargs != 5) RETURN_ERROR("invalid parameters, rect x y w h color");
 
-    RETURN_ERROR("invalid parameters, rect x y w h color");
+    s32 x       = grav_get_int(args[1]);
+    s32 y       = grav_get_int(args[2]);
+    s32 w       = grav_get_int(args[3]);
+    s32 h       = grav_get_int(args[4]);
+    u8 color    = grav_get_int(args[5]);
+    core->api.rect(tic, x, y, w, h, color);
+
+    RETURN_NOVALUE();
 }
 
 // MARK: rectb
@@ -651,18 +613,16 @@ static bool grav_rectb(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, ui
 {
     TIC_GRAVITY_GET_CORE(vm, tic, core);
 
-    if (nargs == 5)
-    {
-        s32 x = grav_get_int(args[1]);
-        s32 y = grav_get_int(args[2]);
-        s32 w = grav_get_int(args[3]);
-        s32 h = grav_get_int(args[4]);
-        u8 color = grav_get_int(args[5]);
-        core->api.rectb(tic, x, y, w, h, color);
-        RETURN_NOVALUE();
-    }
+    if (nargs != 5) RETURN_ERROR("invalid parameters, rectb x y w h color");
 
-    RETURN_ERROR("invalid parameters, rectb x y w h color");
+    s32 x       = grav_get_int(args[1]);
+    s32 y       = grav_get_int(args[2]);
+    s32 w       = grav_get_int(args[3]);
+    s32 h       = grav_get_int(args[4]);
+    u8 color    = grav_get_int(args[5]);
+    core->api.rectb(tic, x, y, w, h, color);
+
+    RETURN_NOVALUE();
 }
 
 // MARK: reset
@@ -670,44 +630,72 @@ static bool grav_reset(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, ui
 {
     TIC_GRAVITY_GET_CORE(vm, tic, core);
 
+    if (nargs > 1) RETURN_ERROR("invalid parameters, reset");
+
     core->api.reset(tic);
 
     RETURN_NOVALUE();
 }
 
 // MARK: sfx
-static bool grav_sfx(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex){}
+static bool grav_sfx(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex)
+{
+    RETURN_NOVALUE();
+}
 
 // MARK: spr
-static bool grav_spr(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex){}
+static bool grav_spr(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex)
+{
+    TIC_GRAVITY_GET_CORE(vm, tic, core);
+
+    if (nargs < 4 || nargs > 10)
+        RETURN_ERROR("invalid parameters, spr id x y [colorkey=-1 [scale=1 [flip=0 [rotate=0 [w=1 [h=1]]]]]]");
+
+    s32 index           = grav_get_int(args[1]);
+    s32 x               = grav_get_int(args[2]);
+    s32 y               = grav_get_int(args[3]);
+    s32 scale           = nargs > 5 ? grav_get_int(args[5]) : 1;
+    tic_flip flip       = nargs > 6 ? grav_get_int(args[6]) : tic_no_flip;
+    tic_rotate rotate   = nargs > 7 ? grav_get_int(args[7]) : tic_no_rotate;
+    s32 w               = nargs > 8 ? grav_get_int(args[8]) : 1;
+    s32 h               = nargs > 9 ? grav_get_int(args[9]) : 1;
+
+    static u8 colors[TIC_PALETTE_SIZE];
+    s32 count = 0;
+
+    if (nargs > 4)
+    {
+        if (VALUE_ISA_LIST(args[4]))
+        {
+            gravity_list_t *list = VALUE_AS_LIST(args[4]);
+            for(s32 i = 0; i < TIC_PALETTE_SIZE && i < list->array.n; i++)
+            {
+                colors[i] = grav_get_int(list->array.p[i]);
+                count++;
+            }
+        }
+        else
+        {
+            colors[0] = grav_get_int(args[4]);
+            count = 1;
+        }
+    }
+
+    core->api.spr(tic, index, x, y, w, h, colors, count, scale, flip, rotate);
+
+    RETURN_NOVALUE();
+}
 
 // MARK: sync
 static bool grav_sync(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex)
 {
     TIC_GRAVITY_GET_CORE(vm, tic, core);
 
-    bool toCart = false;
-    u32 mask = 0;
-    s32 bank = 0;
+    if (nargs > 4) RETURN_ERROR("invalid parameters, sync [mask=0 [bank=0 [tocart=false]]]");
 
-    if (nargs >= 2)
-    {
-        mask = grav_get_int(args[1]);
-
-        if (nargs >= 3)
-        {
-            bank = grav_get_int(args[2]);
-
-            if (nargs == 4)
-            {
-                toCart = (bool)grav_get_int(args[3]);
-            }
-            else
-            {
-                RETURN_ERROR("invalid parameters, sync [ mask=0 [ bank=0 [ tocart=false ] ] ]");
-            }
-        }
-    }
+    u32 mask    = nargs >= 2 ? grav_get_int(args[1]) : 0;
+    s32 bank    = nargs >= 3 ? grav_get_int(args[2]) : 0;
+    bool toCart = nargs == 4 ? grav_get_int(args[3]) != 0 : false;
 
     if(bank >= 0 && bank < TIC_BANKS)
         core->api.sync(tic, mask, bank, toCart);
@@ -728,28 +716,27 @@ static bool grav_time(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uin
 }
 
 // MARK: trace
-static bool grav_trace(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex){}
+static bool grav_trace(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex)
+{
+    RETURN_NOVALUE();
+}
 
 // MARK: tri
 static bool grav_tri(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex)
 {
     TIC_GRAVITY_GET_CORE(vm, tic, core);
 
-    if (nargs == 8)
-    {
-        float pt[6];
+    if (nargs != 8) RETURN_ERROR("invalid parameters, tri x1 y1 x2 y2 x3 y3 color");
 
-        for(s32 i = 0; i < COUNT_OF(pt); i++)
-            pt[i] = grav_get_float(args[i + 1]);
+    float pt[6];
+    for(s32 i = 0; i < COUNT_OF(pt); i++)
+        pt[i] = grav_get_float(args[i + 1]);
 
-        u8 color = grav_get_int(args[7]);
+    u8 color = grav_get_int(args[7]);
 
-        core->api.tri(tic, pt[0], pt[1], pt[2], pt[3], pt[4], pt[5], color);
+    core->api.tri(tic, pt[0], pt[1], pt[2], pt[3], pt[4], pt[5], color);
 
-        RETURN_NOVALUE();
-    }
-
-    RETURN_ERROR("invalid parameters, tri x1 y1 x2 y2 x3 y3 color");
+    RETURN_NOVALUE();
 }
 
 // MARK: trib
@@ -757,21 +744,17 @@ static bool grav_trib(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uin
 {
     TIC_GRAVITY_GET_CORE(vm, tic, core);
 
-    if (nargs == 8)
-    {
-        float pt[6];
+    if (nargs != 8) RETURN_ERROR("invalid parameters, trib x1 y1 x2 y2 x3 y3 color");
 
-        for(s32 i = 0; i < COUNT_OF(pt); i++)
-            pt[i] = grav_get_float(args[i + 1]);
+    float pt[6];
+    for(s32 i = 0; i < COUNT_OF(pt); i++)
+        pt[i] = grav_get_float(args[i + 1]);
 
-        u8 color = grav_get_int(args[7]);
+    u8 color = grav_get_int(args[7]);
 
-        core->api.trib(tic, pt[0], pt[1], pt[2], pt[3], pt[4], pt[5], color);
+    core->api.trib(tic, pt[0], pt[1], pt[2], pt[3], pt[4], pt[5], color);
 
-        RETURN_NOVALUE();
-    }
-
-    RETURN_ERROR("invalid parameters, trib x1 y1 x2 y2 x3 y3 color");
+    RETURN_NOVALUE();
 }
 
 // MARK: tstamp
@@ -789,76 +772,92 @@ static bool grav_ttri(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uin
 {
     TIC_GRAVITY_GET_CORE(vm, tic, core);
 
-    if (nargs >= 13)
+    if (nargs < 13)
+        RETURN_ERROR(
+            "invalid parameters, ttri x1 y1 x2 y2 x3 y3 u1 v1 u2 v2 u3 v3 "
+            "[src=0 [chroma=off [z1=0 z2=0 z3=0]]]");
+
+    float pt[12];
+    for (s32 i = 0; i < COUNT_OF(pt); i++)
+        pt[i] = grav_get_float(args[i + 1]);
+
+    // check for texture src
+    tic_texture_src src = nargs >= 14 ? grav_get_int(args[13]) : tic_tiles_texture;
+
+    static u8 colors[TIC_PALETTE_SIZE];
+    s32 count = 0;
+
+    // check for chroma
+    if (nargs >= 15)
     {
-        float pt[12];
-
-        for (s32 i = 0; i < COUNT_OF(pt); i++)
-            pt[i] = grav_get_float(args[i + 1]);
-
-        static u8 colors[TIC_PALETTE_SIZE];
-        s32 count = 0;
-        tic_texture_src src = tic_tiles_texture;
-
-        // check for texture src
-        if (nargs >= 14)
+        if (VALUE_ISA_LIST(args[14]))
         {
-            src = (tic_texture_src)grav_get_int(args[13]);
-        }
-
-        // check for chroma
-        if (nargs >= 15)
-        {
-            if (VALUE_ISA_LIST(args[14]))
+            gravity_list_t *list = VALUE_AS_LIST(args[14]);
+            for(s32 i = 0; i < TIC_PALETTE_SIZE && i < list->array.n; i++)
             {
-                gravity_list_t *list = VALUE_AS_LIST(args[14]);
-                for(s32 i = 0; i < TIC_PALETTE_SIZE && i < list->array.n; i++)
-                {
-                    colors[i] = grav_get_int(list->array.p[i]);
-                    count++;
-                }
-            }
-            else
-            {
-                colors[0] = grav_get_int(args[14]);
-                count = 1;
+                colors[i] = grav_get_int(list->array.p[i]);
+                count++;
             }
         }
-
-        float z[3] = {0, 0, 0};
-        bool depth = false;
-
-        if (nargs == 18)
+        else
         {
-            for (s32 i = 0; i < COUNT_OF(z); i++)
-                z[i] = grav_get_float(args[15 + i]);
-
-            depth = true;
+            colors[0] = grav_get_int(args[14]);
+            count = 1;
         }
-
-        core->api.ttri(tic, pt[0], pt[1],   //  xy 1
-                            pt[2], pt[3],   //  xy 2
-                            pt[4], pt[5],   //  xy 3
-                            pt[6], pt[7],   //  uv 1
-                            pt[8], pt[9],   //  uv 2
-                            pt[10], pt[11], //  uv 3
-                            src,            // texture source
-                            colors, count,  // chroma
-                            z[0], z[1], z[2], depth); // depth
-
-        RETURN_NOVALUE();
     }
 
-    RETURN_ERROR("invalid parameters, ttri x1 y1 x2 y2 x3 y3 u1 v1 u2 v2 u3 v3 [ src=0 [ chroma=off [ z1=0 z2=0 z3=0 ] ] ]");
+    float z[3] = {0, 0, 0};
+    bool depth = false;
+
+    if (nargs == 18)
+    {
+        for (s32 i = 0; i < COUNT_OF(z); i++)
+            z[i] = grav_get_float(args[15 + i]);
+
+        depth = true;
+    }
+
+    core->api.ttri(tic, pt[0], pt[1],   //  xy 1
+                   pt[2], pt[3],        //  xy 2
+                   pt[4], pt[5],        //  xy 3
+                   pt[6], pt[7],        //  uv 1
+                   pt[8], pt[9],        //  uv 2
+                   pt[10], pt[11],      //  uv 3
+                   src,                 // texture source
+                   colors, count,       // chroma
+                   z[0], z[1], z[2], depth); // depth
+
+    RETURN_NOVALUE();
 }
 
 // MARK: vbank
-static bool grav_vbank(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex){}
+static bool grav_vbank(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex)
+{
+    TIC_GRAVITY_GET_CORE(vm, tic, core);
+
+    s32 prev = core->state.vbank.id;
+
+    if (nargs > 2) RETURN_ERROR("invalid parameters, vbank [id]");
+    if (nargs == 2) core->api.vbank(tic, grav_get_int(args[1]));
+
+    RETURN_VALUE(VALUE_FROM_INT(prev), rindex);
+}
 
 // unused?
-static bool grav_paint(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex){}
-static bool grav_fft(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex){}
-static bool grav_ffts(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex){}
+static bool grav_paint(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex)
+{
+    RETURN_ERROR("paint is unimplemented");
+}
+
+static bool grav_fft(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex)
+{
+    RETURN_ERROR("fft is unimplemented");
+}
+
+static bool grav_ffts(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex)
+{
+    RETURN_ERROR("ffts is unimplemented");
+}
 
 // endregion
 
