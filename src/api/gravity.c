@@ -58,7 +58,7 @@ typedef struct
 
 // endregion
 
-// region Helpers
+// region API
 
 static int grav_get_int_default(gravity_value_t value, int default_value)
 {
@@ -108,10 +108,7 @@ TIC_GRAVITY_DEF_CONVERT_OVERLOAD(float, 0.0f);
 
 #undef TIC_GRAVITY_DEF_CONVERT_OVERLOAD
 
-// endregion
-
-// region API
-
+// MARK: btn
 static bool grav_btn(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex)
 {
     TIC_GRAVITY_GET_CORE(vm, tic, core);
@@ -130,6 +127,7 @@ static bool grav_btn(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint
     RETURN_ERROR("invalid parameters, btn [ id=-1 ]");
 }
 
+// MARK: btnp
 static bool grav_btnp(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex)
 {
     TIC_GRAVITY_GET_CORE(vm, tic, core);
@@ -148,14 +146,15 @@ static bool grav_btnp(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uin
     if (nargs == 4)
     {
         s32 index = grav_get_int(args[1]) & 0x1f;
-        u32 hold = grav_get_int(args[2]);
-        u32 period = grav_get_int(args[3]);
+        s32 hold = grav_get_int(args[2]);
+        s32 period = grav_get_int(args[3]);
         RETURN_VALUE(VALUE_FROM_BOOL(core->api.btnp(tic, index, hold, period)), rindex);
     }
 
     RETURN_ERROR("invalid parameters, btnp [ id=-1 [ hold=-1 period=-1 ] ]");
 }
 
+// MARK: circ
 static bool grav_circ(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex)
 {
     TIC_GRAVITY_GET_CORE(vm, tic, core);
@@ -173,6 +172,7 @@ static bool grav_circ(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uin
     RETURN_ERROR("invalid parameters, circ x y radius color");
 }
 
+// MARK: circb
 static bool grav_circb(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex)
 {
     TIC_GRAVITY_GET_CORE(vm, tic, core);
@@ -190,8 +190,31 @@ static bool grav_circb(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, ui
     RETURN_ERROR("invalid parameters, circb x y radius color");
 }
 
-static bool grav_clip(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex){}
+// MARK: clip
+static bool grav_clip(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex)
+{
+    TIC_GRAVITY_GET_CORE(vm, tic, core);
 
+    if (nargs == 1)
+    {
+        core->api.clip(tic, 0, 0, TIC80_WIDTH, TIC80_HEIGHT);
+        RETURN_NOVALUE();
+    }
+
+    if (nargs == 5)
+    {
+        s32 x = grav_get_int(args[1]);
+        s32 y = grav_get_int(args[2]);
+        s32 w = grav_get_int(args[3]);
+        s32 h = grav_get_int(args[4]);
+        core->api.clip(tic, x, y, w, h);
+        RETURN_NOVALUE();
+    }
+
+    RETURN_ERROR("invalid parameters, clip [ x y w h ]");
+}
+
+// MARK: cls
 static bool grav_cls(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex)
 {
     TIC_GRAVITY_GET_CORE(vm, tic, core);
@@ -204,6 +227,7 @@ static bool grav_cls(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint
     RETURN_NOVALUE();
 }
 
+// MARK: elli
 static bool grav_elli(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex)
 {
     TIC_GRAVITY_GET_CORE(vm, tic, core);
@@ -222,6 +246,7 @@ static bool grav_elli(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uin
     RETURN_ERROR("invalid parameters, elli x y a b color");
 }
 
+// MARK: ellib
 static bool grav_ellib(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex)
 {
     TIC_GRAVITY_GET_CORE(vm, tic, core);
@@ -240,13 +265,101 @@ static bool grav_ellib(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, ui
     RETURN_ERROR("invalid parameters, ellib x y a b color");
 }
 
-static bool grav_exit(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex){}
-static bool grav_fget(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex){}
-static bool grav_font(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex){}
-static bool grav_fset(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex){}
-static bool grav_key(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex){}
-static bool grav_keyp(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex){}
+// MARK: exit
+static bool grav_exit(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex)
+{
+    TIC_GRAVITY_GET_CORE(vm, tic, core);
 
+    core->api.exit(tic);
+
+    RETURN_NOVALUE();
+}
+
+// MARK: fget
+static bool grav_fget(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex)
+{
+    TIC_GRAVITY_GET_CORE(vm, tic, core);
+
+    if (nargs == 3)
+    {
+        s32 index = grav_get_int(args[1]);
+        u8 flag = grav_get_int(args[2]);
+        RETURN_VALUE(VALUE_FROM_BOOL(core->api.fget(tic, index, flag)), rindex);
+    }
+
+    RETURN_ERROR("invalid parameters, fget sprite flag");
+}
+
+// MARK: font
+static bool grav_font(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex){}
+
+// MARK: fset
+static bool grav_fset(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex)
+{
+    TIC_GRAVITY_GET_CORE(vm, tic, core);
+
+    if (nargs == 4)
+    {
+        s32 index = grav_get_int(args[1]);
+        u8 flag = grav_get_int(args[2]);
+        bool value = grav_get_int(args[3]) != 0;
+        core->api.fset(tic, index, flag, value);
+        RETURN_NOVALUE();
+    }
+
+    RETURN_ERROR("invalid parameters, fset sprite flag value");
+}
+
+// MARK: key
+static bool grav_key(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex)
+{
+    TIC_GRAVITY_GET_CORE(vm, tic, core);
+
+    if (nargs == 1)
+    {
+        RETURN_VALUE(VALUE_FROM_BOOL(core->api.key(tic, tic_key_unknown)), rindex);
+    }
+
+    if (nargs == 2)
+    {
+        tic_key key = grav_get_int(args[1]);
+        if (key >= tic_keys_count) RETURN_ERROR("unknown keyboard code");
+        RETURN_VALUE(VALUE_FROM_BOOL(core->api.key(tic, key)), rindex);
+    }
+
+    RETURN_ERROR("invalid parameters, key [ code=0 ]");
+}
+
+// MARK: keyp
+static bool grav_keyp(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex)
+{
+    TIC_GRAVITY_GET_CORE(vm, tic, core);
+
+    if (nargs == 1)
+    {
+        RETURN_VALUE(VALUE_FROM_BOOL(core->api.keyp(tic, tic_key_unknown, -1, -1)), rindex);
+    }
+
+    tic_key key = grav_get_int(args[1]);
+
+    if (key >= tic_keys_count) RETURN_ERROR("unknown keyboard code");
+
+    if (nargs == 2)
+    {
+        RETURN_VALUE(VALUE_FROM_BOOL(core->api.keyp(tic, key, -1, -1)), rindex);
+    }
+
+    if (nargs == 4)
+    {
+        s32 hold = grav_get_int(args[2]);
+        s32 period = grav_get_int(args[3]);
+        RETURN_VALUE(VALUE_FROM_BOOL(core->api.keyp(tic, key, hold, period)), rindex);
+    }
+
+    RETURN_ERROR("invalid parameters, keyp [ code=0 [ hold=-1 period=-1 ] ]");
+}
+
+// MARK: line
 static bool grav_line(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex)
 {
     TIC_GRAVITY_GET_CORE(vm, tic, core);
@@ -265,25 +378,61 @@ static bool grav_line(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uin
     RETURN_ERROR("invalid parameters, line x0 y0 x1 y1 color");
 }
 
+// MARK: map
 static bool grav_map(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex){}
+
+// MARK: memcpy
 static bool grav_memcpy(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex){}
+
+// MARK: memset
 static bool grav_memset(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex){}
+
+// MARK: mget
 static bool grav_mget(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex){}
+
+// MARK: mouse
 static bool grav_mouse(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex){}
+
+// MARK: mset
 static bool grav_mset(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex){}
+
+// MARK: music
 static bool grav_music(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex){}
+
+// MARK: peek
 static bool grav_peek(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex){}
+
+// MARK: peek1
 static bool grav_peek1(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex){}
+
+// MARK: peek2
 static bool grav_peek2(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex){}
+
+// MARK: peek4
 static bool grav_peek4(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex){}
+
+// MARK: pix
 static bool grav_pix(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex){}
+
+// MARK: pmem
 static bool grav_pmem(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex){}
+
+// MARK: poke
 static bool grav_poke(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex){}
+
+// MARK: poke1
 static bool grav_poke1(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex){}
+
+// MARK: poke2
 static bool grav_poke2(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex){}
+
+// MARK: poke4
 static bool grav_poke4(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex){}
+
+// MARK: print
 static bool grav_print(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex){}
 
+// MARK: rect
 static bool grav_rect(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex)
 {
     TIC_GRAVITY_GET_CORE(vm, tic, core);
@@ -302,6 +451,7 @@ static bool grav_rect(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uin
     RETURN_ERROR("invalid parameters, rect x y w h color");
 }
 
+// MARK: rectb
 static bool grav_rectb(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex)
 {
     TIC_GRAVITY_GET_CORE(vm, tic, core);
@@ -320,22 +470,50 @@ static bool grav_rectb(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, ui
     RETURN_ERROR("invalid parameters, rectb x y w h color");
 }
 
-static bool grav_reset(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex){}
+// MARK: reset
+static bool grav_reset(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex)
+{
+    TIC_GRAVITY_GET_CORE(vm, tic, core);
+
+    core->api.reset(tic);
+
+    RETURN_NOVALUE();
+}
+
+// MARK: sfx
 static bool grav_sfx(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex){}
+
+// MARK: spr
 static bool grav_spr(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex){}
+
+// MARK: sync
 static bool grav_sync(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex){}
+
+// MARK: time
 static bool grav_time(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex){}
+
+// MARK: trace
 static bool grav_trace(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex){}
+
+// MARK: tri
 static bool grav_tri(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex){}
+
+// MARK: trib
 static bool grav_trib(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex){}
+
+// MARK: tstamp
 static bool grav_tstamp(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex){}
+
+// MARK: ttri
 static bool grav_ttri(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex){}
+
+// MARK: vbank
 static bool grav_vbank(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex){}
 
 // unused?
 static bool grav_paint(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex){}
-static bool grav_ffts(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex){}
 static bool grav_fft(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex){}
+static bool grav_ffts(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex){}
 
 // endregion
 
