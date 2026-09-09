@@ -89,6 +89,16 @@ static void report_error(gravity_vm *vm, error_type_t type,
     }
 }
 
+static const char* get_precode(void* xdata)
+{
+    static char buffer[16384];
+    buffer[0] = '\0';
+#define TIC_GRAVITY_EXTERN(NAME) strcat(buffer, "extern var " #NAME ";\n");
+    TIC_GRAVITY_EXTERN(cls);
+#undef TIC_GRAVITY_EXTERN
+    return buffer;
+}
+
 static void initAPI(GRAVITYVM *vm)
 {
     // bind TIC-80 API
@@ -121,7 +131,11 @@ static bool initGravity(tic_mem* tic, const char* code)
     // allocate and populate the vm wrapper
     core->currentVM = malloc(sizeof(GRAVITYVM));
     GRAVITYVM *currentVM = core->currentVM;
-    gravity_delegate_t delegate = { .error_callback = report_error, .xdata = tic };
+    gravity_delegate_t delegate = {
+        .error_callback = report_error,
+        .precode_callback = get_precode,
+        .xdata = tic
+    };
     currentVM->delegate = delegate;
 
     // create the gravity vm
