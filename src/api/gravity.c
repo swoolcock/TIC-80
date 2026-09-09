@@ -37,9 +37,9 @@ extern bool parse_note(const char* noteStr, s32* note, s32* octave);
 
 // region Macros
 
-#define TIC_GRAVITY_GET(TICMEM, TICCORE, CURRENTVM) \
-    tic_core* TICCORE = (tic_core*)(TICMEM); \
-    GRAVITYVM* CURRENTVM = (GRAVITYVM*)(TICCORE)->currentVM;
+#define TIC_GRAVITY_GET_CORE(VM, TICMEM, TICCORE) \
+    tic_mem* TICMEM = (tic_mem*)gravity_vm_delegate(VM)->xdata; \
+    tic_core* TICCORE = (tic_core*)(TICMEM);
 
 // endregion
 
@@ -60,16 +60,67 @@ typedef struct
 
 // region API
 
+static bool grav_btn(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex){}
+static bool grav_btnp(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex){}
+static bool grav_circ(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex){}
+static bool grav_circb(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex){}
+static bool grav_clip(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex){}
+
 static bool grav_cls(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex)
 {
-    tic_mem *mem = (tic_mem*)gravity_vm_delegate(vm)->xdata;
-    tic_core *core = (tic_core*)mem;
+    TIC_GRAVITY_GET_CORE(vm, mem, core);
 
     u8 cls_color = (u8)VALUE_AS_INT(args[1]);
     core->api.cls(mem, cls_color);
 
     RETURN_NOVALUE();
 }
+
+static bool grav_elli(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex){}
+static bool grav_ellib(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex){}
+static bool grav_exit(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex){}
+static bool grav_fget(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex){}
+static bool grav_font(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex){}
+static bool grav_fset(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex){}
+static bool grav_key(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex){}
+static bool grav_keyp(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex){}
+static bool grav_line(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex){}
+static bool grav_map(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex){}
+static bool grav_memcpy(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex){}
+static bool grav_memset(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex){}
+static bool grav_mget(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex){}
+static bool grav_mouse(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex){}
+static bool grav_mset(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex){}
+static bool grav_music(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex){}
+static bool grav_peek(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex){}
+static bool grav_peek1(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex){}
+static bool grav_peek2(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex){}
+static bool grav_peek4(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex){}
+static bool grav_pix(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex){}
+static bool grav_pmem(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex){}
+static bool grav_poke(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex){}
+static bool grav_poke1(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex){}
+static bool grav_poke2(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex){}
+static bool grav_poke4(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex){}
+static bool grav_print(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex){}
+static bool grav_rect(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex){}
+static bool grav_rectb(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex){}
+static bool grav_reset(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex){}
+static bool grav_sfx(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex){}
+static bool grav_spr(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex){}
+static bool grav_sync(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex){}
+static bool grav_time(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex){}
+static bool grav_trace(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex){}
+static bool grav_tri(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex){}
+static bool grav_trib(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex){}
+static bool grav_tstamp(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex){}
+static bool grav_ttri(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex){}
+static bool grav_vbank(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex){}
+
+// unused?
+static bool grav_paint(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex){}
+static bool grav_ffts(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex){}
+static bool grav_fft(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex){}
 
 // endregion
 
@@ -93,8 +144,8 @@ static const char* get_precode(void* xdata)
 {
     static char buffer[16384];
     buffer[0] = '\0';
-#define TIC_GRAVITY_EXTERN(NAME) strcat(buffer, "extern var " #NAME ";\n");
-    TIC_GRAVITY_EXTERN(cls);
+#define TIC_GRAVITY_EXTERN(name, ...) {strcat(buffer, "extern var " #name ";\n");}
+    TIC_API_LIST(TIC_GRAVITY_EXTERN);
 #undef TIC_GRAVITY_EXTERN
     return buffer;
 }
@@ -102,7 +153,12 @@ static const char* get_precode(void* xdata)
 static void initAPI(GRAVITYVM *vm)
 {
     // bind TIC-80 API
-    gravity_vm_setvalue(vm->vm, "cls", NEW_CLOSURE_VALUE(grav_cls));
+#define API_FUNC_DEF(name, ...) {grav_ ## name, #name},
+    static const struct{gravity_c_internal func; const char* name;} ApiItems[] = {TIC_API_LIST(API_FUNC_DEF)};
+#undef API_FUNC_DEF
+
+    for (s32 i = 0; i < COUNT_OF(ApiItems); i++)
+        gravity_vm_setvalue(vm->vm, ApiItems[i].name, NEW_CLOSURE_VALUE(ApiItems[i].func));
 
     // TODO: remove things we shouldn't have access to such as filesystem, env, etc.
 }
@@ -175,7 +231,7 @@ static bool initGravity(tic_mem* tic, const char* code)
 
 static void callGravityTick(tic_mem* tic)
 {
-    TIC_GRAVITY_GET(tic, core, currentVM);
+    GRAVITYVM* currentVM = ((tic_core*)tic)->currentVM;
     if (currentVM->tickFunction)
     {
         gravity_vm_loadclosure(currentVM->vm, currentVM->tickFunction);
@@ -185,7 +241,7 @@ static void callGravityTick(tic_mem* tic)
 
 static void callGravityBoot(tic_mem* tic)
 {
-    TIC_GRAVITY_GET(tic, core, currentVM);
+    GRAVITYVM* currentVM = ((tic_core*)tic)->currentVM;
     if (currentVM->bootFunction)
     {
         gravity_vm_loadclosure(currentVM->vm, currentVM->bootFunction);
@@ -195,7 +251,7 @@ static void callGravityBoot(tic_mem* tic)
 
 static void callGravityScanline(tic_mem* tic, s32 row, void* data)
 {
-    TIC_GRAVITY_GET(tic, core, currentVM);
+    GRAVITYVM* currentVM = ((tic_core*)tic)->currentVM;
     if (currentVM->scanlineFunction)
     {
         gravity_vm_loadclosure(currentVM->vm, currentVM->scanlineFunction);
@@ -206,7 +262,7 @@ static void callGravityScanline(tic_mem* tic, s32 row, void* data)
 
 static void callGravityBorder(tic_mem* tic, s32 row, void* data)
 {
-    TIC_GRAVITY_GET(tic, core, currentVM);
+    GRAVITYVM* currentVM = ((tic_core*)tic)->currentVM;
     if (currentVM->borderFunction)
     {
         gravity_vm_loadclosure(currentVM->vm, currentVM->borderFunction);
@@ -217,7 +273,7 @@ static void callGravityBorder(tic_mem* tic, s32 row, void* data)
 
 static void callGravityMenu(tic_mem* tic, s32 index, void* data)
 {
-    TIC_GRAVITY_GET(tic, core, currentVM);
+    GRAVITYVM* currentVM = ((tic_core*)tic)->currentVM;
     if (currentVM->menuFunction)
     {
         gravity_vm_loadclosure(currentVM->vm, currentVM->menuFunction);
