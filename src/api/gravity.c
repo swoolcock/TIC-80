@@ -58,6 +58,58 @@ typedef struct
 
 // endregion
 
+// region Helpers
+
+static int grav_convert_int_default(gravity_value_t value, int default_value)
+{
+    if (VALUE_ISA_INT(value) || VALUE_ISA_BOOL(value)) return VALUE_AS_INT(value);
+    if (VALUE_ISA_FLOAT(value)) return (int)VALUE_AS_FLOAT(value);
+    if (VALUE_ISA_STRING(value))
+    {
+        const gravity_string_t *str = VALUE_AS_STRING(value);
+        char *end;
+        float parsed = strtof(str->s, &end);
+        if (end != str->s)
+        {
+            // ignore trailing whitespace as in Lua
+            while (isspace((u8)*end)) end++;
+            if (*end == '\0') return (int)parsed;
+        }
+    }
+    return default_value;
+}
+
+static float grav_convert_float_default(gravity_value_t value, float default_value)
+{
+    if (VALUE_ISA_INT(value) || VALUE_ISA_BOOL(value)) return (float)VALUE_AS_INT(value);
+    if (VALUE_ISA_FLOAT(value)) return VALUE_AS_FLOAT(value);
+    if (VALUE_ISA_STRING(value))
+    {
+        const gravity_string_t *str = VALUE_AS_STRING(value);
+        char *end;
+        float parsed = strtof(str->s, &end);
+        if (end != str->s)
+        {
+            // ignore trailing whitespace as in Lua
+            while (isspace((u8)*end)) end++;
+            if (*end == '\0') return parsed;
+        }
+    }
+    return default_value;
+}
+
+#define TIC_GRAVITY_DEF_CONVERT_OVERLOAD(TYPE, DEFAULT) \
+    static TYPE grav_convert_##TYPE(gravity_value_t value) { \
+        return grav_convert_##TYPE##_default(value, DEFAULT); \
+    }
+
+TIC_GRAVITY_DEF_CONVERT_OVERLOAD(int, 0);
+TIC_GRAVITY_DEF_CONVERT_OVERLOAD(float, 0.0f);
+
+#undef TIC_GRAVITY_DEF_CONVERT_OVERLOAD
+
+// endregion
+
 // region API
 
 static bool grav_btn(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint32_t rindex){}
@@ -70,7 +122,9 @@ static bool grav_cls(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, uint
 {
     TIC_GRAVITY_GET_CORE(vm, mem, core);
 
-    u8 cls_color = (u8)VALUE_AS_INT(args[1]);
+    if (nargs > 2) RETURN_ERROR("invalid parameters, cls(color=0)");
+
+    u8 cls_color = (u8)grav_convert_int(args[1]);
     core->api.cls(mem, cls_color);
 
     RETURN_NOVALUE();
