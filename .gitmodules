@@ -89,3 +89,6 @@
 [submodule "vendor/lpeg"]
 	path = vendor/lpeg
 	url = https://github.com/roberto-ieru/LPeg.git
+[submodule "vendor/lily"]
+	path = vendor/lily
+	url = https://github.com/FascinatedBox/lily.git

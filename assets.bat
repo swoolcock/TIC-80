@@ -22,6 +22,7 @@ build\bin\prj2cart demos\squirreldemo.nut build\squirreldemo.tic
 build\bin\prj2cart demos\tetris.lua build\tetris.tic
 build\bin\prj2cart demos\wrendemo.wren build\wrendemo.tic
 build\bin\prj2cart demos\yuedemo.yue build\yuedemo.tic
+:: build\bin\prj2cart demos\lilydemo.lily build\lilydemo.tic
 
 build\bin\wasmp2cart demos\wasm\wasmdemo.wasmp build\wasmdemo.tic --binary demos\wasm\wasmdemo.wasm
 build\bin\wasmp2cart demos\bunny\wasmmark\wasmmark.wasmp build\wasmmark.tic --binary demos\bunny\wasmmark\wasmmark.wasm
@@ -36,6 +37,7 @@ build\bin\prj2cart demos\bunny\schememark.scm build\schememark.tic
 build\bin\prj2cart demos\bunny\squirrelmark.nut build\squirrelmark.tic
 build\bin\prj2cart demos\bunny\wrenmark.wren build\wrenmark.tic
 build\bin\prj2cart demos\bunny\yuemark.yue build\yuemark.tic
+:: build\bin\prj2cart demos\bunny\lilymark.lily build\lilymark.tic
 
 build\bin\bin2txt build\config.tic build\assets\config.tic.dat -z
 build\bin\bin2txt build\luademo.tic build\assets\luademo.tic.dat -z
@@ -73,5 +75,7 @@ build\bin\bin2txt build\wrenmark.tic build\assets\wrenmark.tic.dat -z
 build\bin\bin2txt build\wasmdemo.tic build\assets\wasmdemo.tic.dat -z
 build\bin\bin2txt build\yuedemo.tic build\assets\yuedemo.tic.dat -z
 build\bin\bin2txt build\yuemark.tic build\assets\yuemark.tic.dat -z
+:: build\bin\bin2txt build\lilydemo.tic build\assets\lilydemo.tic.dat -z
+:: build\bin\bin2txt build\lilymark.tic build\assets\lilymark.tic.dat -z
 
 build\bin\bin2txt build\cart.png build\assets\cart.png.dat

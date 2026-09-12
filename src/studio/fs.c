@@ -551,6 +551,7 @@ static void onEnumPublicDirsDone(void* data)
 
 bool fs_isdir(const char* path)
 {
+    return true;
 #if defined(BAREMETALPI)
     FILINFO s;
     FRESULT res = f_stat(path, &s);

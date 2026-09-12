@@ -77,6 +77,10 @@ extern tic_script EXPORT_SCRIPT(Janet);
 extern tic_script EXPORT_SCRIPT(Python);
 #endif
 
+#if defined(TIC_BUILD_WITH_LILY)
+extern tic_script EXPORT_SCRIPT(Lily);
+#endif
+
 #endif
 
 static const tic_script *Scripts[MAX_SUPPORTED_LANGS + 1] =
@@ -128,6 +132,10 @@ static const tic_script *Scripts[MAX_SUPPORTED_LANGS + 1] =
 
     #if defined(TIC_BUILD_WITH_PYTHON)
     &EXPORT_SCRIPT(Python),
+    #endif
+
+    #if defined(TIC_BUILD_WITH_LILY)
+    &EXPORT_SCRIPT(Lily);
     #endif
 
 #endif

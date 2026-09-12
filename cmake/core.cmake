@@ -37,6 +37,7 @@ if(BUILD_DEPRECATED)
 endif()
 
 add_library(tic80core STATIC ${TIC80CORE_SRC})
+target_compile_options(tic80core PRIVATE -g -O0) # TODO: remove
 
 if (FREEBSD)
     target_include_directories(tic80core PRIVATE ${SYSROOT_PATH}/usr/local/include)
@@ -111,6 +112,10 @@ if(BUILD_STATIC)
 
     if(BUILD_WITH_WASM)
         target_link_libraries(tic80core PRIVATE wasm)
+    endif()
+
+    if(BUILD_WITH_LILY)
+        target_link_libraries(tic80core PRIVATE lily)
     endif()
 
     target_link_libraries(tic80core PRIVATE runtime)
