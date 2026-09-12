@@ -73,6 +73,7 @@ if(NINTENDO_SWITCH AND NOT LIBRETRO_STATIC)
 endif()
 
 add_library(runtime INTERFACE)
+#target_compile_options(runtime PRIVATE -g -O0) # TODO: remove
 
 if(BUILD_STATIC)
     set(TIC_RUNTIME STATIC)

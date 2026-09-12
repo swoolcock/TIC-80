@@ -29,6 +29,7 @@
 #define TEXT_CURSOR_DELAY (TIC80_FRAMERATE / 2)
 #define TEXT_CURSOR_BLINK_PERIOD TIC80_FRAMERATE
 #define BOOKMARK_WIDTH 7
+#define LINE_NUMBER_WIDTH 12
 #define CODE_EDITOR_WIDTH (TIC80_WIDTH - BOOKMARK_WIDTH)
 #define CODE_EDITOR_HEIGHT (TIC80_HEIGHT - TOOLBAR_SIZE - STUDIO_TEXT_HEIGHT)
 #define TEXT_BUFFER_HEIGHT (CODE_EDITOR_HEIGHT / STUDIO_TEXT_HEIGHT)
@@ -129,6 +130,11 @@ tic_color getCodeColor(Code* code)
     return tic_color_white;
 }
 
+static inline s32 getGutterWidth(Code* code)
+{
+    return code->lineNumbers ? LINE_NUMBER_WIDTH : BOOKMARK_WIDTH;
+}
+
 static void drawStatus(Code* code)
 {
     enum {Height = TIC_FONT_HEIGHT + 1, StatusY = TIC80_HEIGHT - TIC_FONT_HEIGHT};
@@ -208,9 +214,10 @@ static void toggleBookmark(Code* code, char* codePos)
 static void drawBookmarks(Code* code)
 {
     tic_mem* tic = code->tic;
-
-    enum {Width = BOOKMARK_WIDTH, Height = TIC80_HEIGHT - TOOLBAR_SIZE*2};
-    tic_rect rect = {0, TOOLBAR_SIZE, Width, Height};
+    const s32 gutterWidth = getGutterWidth(code);
+    const s32 gutterHeight = TIC80_HEIGHT - TOOLBAR_SIZE*2;
+    tic_rect rect = {0, TOOLBAR_SIZE, gutterWidth, gutterHeight};
+    s32 mouseOverLine = -1;
 
     tic_api_rect(code->tic, rect.x, rect.y, rect.w, rect.h, tic_color_grey);
 
@@ -220,9 +227,9 @@ static void drawBookmarks(Code* code)
 
         showTooltip(code->studio, "BOOKMARK [ctrl+f1]");
 
-        s32 line = (tic_api_mouse(tic).y - rect.y) / STUDIO_TEXT_HEIGHT;
+        s32 line = mouseOverLine = (tic_api_mouse(tic).y - rect.y) / STUDIO_TEXT_HEIGHT;
 
-        drawBitIcon(code->studio, tic_icon_bookmark, rect.x, rect.y + line * STUDIO_TEXT_HEIGHT - 1, tic_color_dark_grey);
+        drawBitIcon(code->studio, tic_icon_bookmark, rect.x + gutterWidth - TIC_SPRITESIZE, rect.y + line * STUDIO_TEXT_HEIGHT - 1, tic_color_dark_grey);
 
         if(checkMouseClick(code->studio, &rect, tic_mouse_left))
             toggleBookmark(code, getPosByLine(code->src, line + code->scroll.y));
@@ -232,15 +239,31 @@ static void drawBookmarks(Code* code)
     const CodeState* syntaxPointer = code->state;
     s32 y = -code->scroll.y;
 
+    char buf[5] = "";
+    bool bookmarkDrawn = false;
+
+    int cursorX, cursorY;
+    codeGetPos(code, &cursorX, &cursorY);
+
     while(*pointer)
     {
         if(syntaxPointer++->bookmark)
         {
-            drawBitIcon(code->studio, tic_icon_bookmark, rect.x, rect.y + y * STUDIO_TEXT_HEIGHT, tic_color_black);
-            drawBitIcon(code->studio, tic_icon_bookmark, rect.x, rect.y + y * STUDIO_TEXT_HEIGHT - 1, tic_color_yellow);
+            drawBitIcon(code->studio, tic_icon_bookmark, rect.x + BOOKMARK_WIDTH - 8, rect.y + y * STUDIO_TEXT_HEIGHT, tic_color_black);
+            drawBitIcon(code->studio, tic_icon_bookmark, rect.x + BOOKMARK_WIDTH - 8, rect.y + y * STUDIO_TEXT_HEIGHT - 1, tic_color_yellow);
+            bookmarkDrawn = true;
+        }
+        else if (y != mouseOverLine && !bookmarkDrawn)
+        {
+            snprintf(buf, sizeof(buf), "%3d", y + 1 + code->scroll.y);
+            tic_api_print(tic, buf, rect.x, rect.y + y * STUDIO_TEXT_HEIGHT, y + code->scroll.y == cursorY ? tic_color_white : tic_color_dark_grey, true, 1, true);
         }
 
-        if(*pointer++ == '\n')y++;
+        if(*pointer++ == '\n')
+        {
+            bookmarkDrawn = false;
+            y++;
+        }
     }
 }
 

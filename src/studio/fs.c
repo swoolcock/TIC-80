@@ -558,7 +558,18 @@ bool fs_isdir(const char* path)
     return s.fattrib & AM_DIR;
 #else
     struct tic_stat_struct s;
-    const FsString* pathString = utf8ToString(path);
+
+    char buf[1024];
+    strncpy(buf, path, strlen(path));
+    for (int i = strlen(path)-1;i>=0;i++)
+    {
+        if (buf[i] == '\\' || buf[i] == '/')
+            buf[i] = '\0';
+        else
+            break;
+    }
+
+    const FsString* pathString = utf8ToString(buf);
     bool isdir = tic_stat(pathString, &s) == 0 && S_ISDIR(s.st_mode);
     freeString(pathString);
     return isdir;

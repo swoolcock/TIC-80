@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="VcsDirectoryMappings">
+    <mapping directory="" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/vendor/argparse" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/vendor/blip-buf" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/vendor/dirent" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/vendor/dlfcn" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/vendor/giflib" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/vendor/janet" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/vendor/jsmn" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/vendor/libpng" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/vendor/lpeg" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/vendor/lua" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/vendor/moonscript" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/vendor/mruby" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/vendor/naett" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/vendor/pocketpy" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/vendor/pocketpy/3rd/dmath/dmath" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/vendor/pocketpy/3rd/dmath/dmath/musl" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/vendor/pocketpy/3rd/lz4/lz4" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/vendor/pocketpy/3rd/periphery/c-periphery" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/vendor/quickjs" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/vendor/sdl-gpu" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/vendor/sdl2" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/vendor/squirrel" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/vendor/wasm3" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/vendor/wren" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/vendor/yuescript" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/vendor/zip" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/vendor/zlib" vcs="Git" />
+  </component>
+</project>
