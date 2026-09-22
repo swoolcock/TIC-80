@@ -5,31 +5,6 @@
 option(BUILD_WITH_GRAVITY "Gravity Enabled" ${BUILD_WITH_ALL})
 message("BUILD_WITH_GRAVITY: ${BUILD_WITH_GRAVITY}")
 
-#if(BUILD_WITH_SQUIRREL AND PREFER_SYSTEM_LIBRARIES)
-#    find_path(squirrel_INLCUDE_DIR NAMES squirrel.h PATH_SUFFIXES squirrel)
-#    find_library(squirrel_LIBRARY NAMES squirrel)
-#    find_library(sqstdlib_LIBRARY NAMES sqstdlib)
-#    if(squirrel_INLCUDE_DIR AND squirrel_LIBRARY AND sqstdlib_LIBRARY)
-#        add_library(squirrel STATIC
-#            ${CMAKE_SOURCE_DIR}/src/api/squirrel.c
-#            ${CMAKE_SOURCE_DIR}/src/api/parse_note.c
-#        )
-#        target_compile_definitions(squirrel INTERFACE TIC_BUILD_WITH_SQUIRREL)
-#        target_link_libraries(squirrel PRIVATE runtime ${squirrel_LIBRARY} ${sqstdlib_LIBRARY})
-#        target_include_directories(squirrel
-#            PUBLIC ${squirrel_INLCUDE_DIR}
-#            PRIVATE
-#                ${CMAKE_SOURCE_DIR}/include
-#                ${CMAKE_SOURCE_DIR}/src
-#        )
-#        message(STATUS "Use system library: squirrel")
-#        return()
-#    else()
-#        message(WARNING "System library squirrel not found")
-#    endif()
-#endif()
-
-
 if(BUILD_WITH_GRAVITY)
 
     set(GRAVITY_DIR ${THIRDPARTY_DIR}/gravity/src)
@@ -72,10 +47,7 @@ if(BUILD_WITH_GRAVITY)
         target_compile_definitions(gravity INTERFACE TIC_BUILD_WITH_GRAVITY=1)
     endif()
 
-    target_link_libraries(gravity PRIVATE
-            runtime
-            shlwapi
-    )
+    target_link_libraries(gravity PRIVATE runtime)
 
     set_target_properties(gravity PROPERTIES LINKER_LANGUAGE CXX)
 
