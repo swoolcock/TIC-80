@@ -25,7 +25,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <ctype.h>
 
 #include "gravity_compiler.h"
 #include "gravity_core.h"
@@ -1186,7 +1185,7 @@ static void report_error(gravity_vm *vm, error_type_t type,
     if (core->data)
     {
         char buf[1024];
-        snprintf(buf, sizeof(buf), "%s\n", description);
+        snprintf(buf, sizeof(buf), "L%d, C%d: %s\n", desc.lineno, desc.colno, description);
         core->data->error(core->data->data, buf);
     }
 }
