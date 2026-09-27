@@ -113,6 +113,10 @@ if(BUILD_STATIC)
         target_link_libraries(tic80core PRIVATE wasm)
     endif()
 
+    if(BUILD_WITH_GRAVITY)
+        target_link_libraries(tic80core PRIVATE gravity)
+    endif()
+
     target_link_libraries(tic80core PRIVATE runtime)
 
 endif()

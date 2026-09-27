@@ -89,3 +89,6 @@
 [submodule "vendor/lpeg"]
 	path = vendor/lpeg
 	url = https://github.com/roberto-ieru/LPeg.git
+[submodule "vendor/gravity"]
+	path = vendor/gravity
+	url = https://github.com/marcobambini/gravity.git
