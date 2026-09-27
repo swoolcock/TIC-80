@@ -30,13 +30,12 @@
 #include "gravity_core.h"
 #include "gravity_hash.h"
 #include "gravity_macros.h"
-#include "gravity_optionals.h"
-#include "gravity_opt_env.h"
-#include "gravity_opt_file.h"
 #include "gravity_vm.h"
 #include "gravity_vmmacros.h"
 
 extern bool parse_note(const char* noteStr, s32* note, s32* octave);
+
+// #define MOUSE_FILL_ARRAY
 
 // region Macros
 
@@ -51,7 +50,6 @@ extern bool parse_note(const char* noteStr, s32* note, s32* octave);
 typedef struct
 {
     gravity_vm *vm;
-    tic_mem *tic;
     gravity_delegate_t delegate;
     gravity_closure_t *borderFunction;      // BDR_FN
     gravity_closure_t *bootFunction;        // BOOT_FN
@@ -525,15 +523,24 @@ static bool grav_mouse(gravity_vm *vm, gravity_value_t *args, uint16_t nargs, ui
 {
     TIC_GRAVITY_GET_CORE(vm, tic, core);
 
+#ifdef MOUSE_FILL_ARRAY
     if (nargs > 2 || nargs == 2 && !VALUE_ISA_NULL(args[1]) && !VALUE_ISA_LIST(args[1]))
         RETURN_ERROR("invalid parameters, mouse [array]");
+#else
+    if (nargs > 1) RETURN_ERROR("invalid parameters, mouse");
+#endif
 
     const int out_value_count = 7;
 
     tic_point pos = core->api.mouse((tic_mem*)core);
     const tic80_mouse* mouse = &core->memory.ram->input.mouse;
 
+#if MOUSE_FILL_ARRAY
     gravity_list_t *list = nargs == 2 ? VALUE_AS_LIST(args[1]) : NULL;
+#else
+    gravity_list_t *list = NULL;
+#endif
+
     if (!list || gravity_list_size(vm, list) != out_value_count)
         list = gravity_list_new(vm, out_value_count);
 
