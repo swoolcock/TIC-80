@@ -40,6 +40,7 @@ if(BUILD_WITH_GRAVITY)
 
     add_library(gravity ${TIC_RUNTIME} ${GRAVITY_SRC})
     target_compile_options(gravity PRIVATE -g -O0) # TODO: remove
+    target_compile_definitions(gravity PRIVATE TIC_BUILD_WITH_GRAVITY=1)
 
     if(NOT BUILD_STATIC)
         set_target_properties(gravity PROPERTIES PREFIX "")
